@@ -1,3 +1,4 @@
+/* Full-screen layout that centres the login card. */
 .login-page {
   min-height: 100svh;
   display: grid;
@@ -5,12 +6,14 @@
   padding: 28px;
 }
 
+
 .home-page {
   min-height: 100svh;
   display: grid;
   place-items: center;
   padding: 28px;
 }
+
 
 .login-card {
   width: min(100%, 420px);
@@ -44,6 +47,7 @@
   letter-spacing: -0.6px;
 }
 
+/* Uppercase product label above the main heading. */
 .eyebrow {
   margin: 0 0 8px;
   color: var(--accent);
@@ -53,6 +57,7 @@
   text-transform: uppercase;
 }
 
+/* Shared style for the primary page heading. */
 h1 {
   margin: 0;
   color: var(--text-heading);
@@ -61,28 +66,33 @@ h1 {
   letter-spacing: -0.04em;
 }
 
+/* Supporting sentence below the login heading. */
 .intro {
   margin: 12px 0 32px;
   color: var(--text-muted);
 }
 
+/* Vertical layout and spacing for the login controls. */
 form {
   display: grid;
   gap: 22px;
 }
 
+/* Groups one label, input, and its validation message. */
 .field-group {
   display: grid;
   gap: 8px;
   text-align: left;
 }
 
+/* Style for form field labels. */
 label {
   color: var(--text-heading);
   font-size: 14px;
   font-weight: 650;
 }
 
+/* Base visual treatment shared by the email and password inputs. */
 input {
   width: 100%;
   min-height: 48px;
@@ -95,27 +105,33 @@ input {
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
+/* Muted colour for example input text. */
 input::placeholder {
   color: var(--placeholder);
 }
 
+/* Visible keyboard and pointer focus treatment for inputs. */
 input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* Highlights inputs that currently have a validation error. */
 input[aria-invalid='true'] {
   border-color: var(--error);
 }
 
+/* Positions the password visibility button inside the password input. */
 .password-field {
   position: relative;
 }
 
+/* Reserves space so typed text does not sit beneath the eye button. */
 .password-field input {
   padding-right: 50px;
 }
 
+/* Button that changes between hidden and visible password text. */
 .password-toggle {
   position: absolute;
   top: 50%;
@@ -133,7 +149,9 @@ input[aria-invalid='true'] {
   cursor: pointer;
 }
 
+/* Provides hover and keyboard-focus feedback for the eye button. */
 .password-toggle:hover,
+/* Adds an accessible focus outline to the eye button. */
 .password-toggle:focus-visible {
   color: var(--accent);
   background: var(--accent-soft);
@@ -144,6 +162,7 @@ input[aria-invalid='true'] {
   outline-offset: 1px;
 }
 
+/* Sizes and colours both eye SVG icons. */
 .password-toggle svg {
   width: 21px;
   height: 21px;
@@ -154,16 +173,19 @@ input[aria-invalid='true'] {
   stroke-width: 1.8;
 }
 
+/* Shared compact spacing for feedback messages. */
 .error,
 .success {
   margin: 0;
   font-size: 13px;
 }
 
+/* Colour for validation and Firebase sign-in errors. */
 .error {
   color: var(--error);
 }
 
+/* Primary button that submits the login form. */
 .submit-button {
   min-height: 50px;
   border: 0;
@@ -175,46 +197,43 @@ input[aria-invalid='true'] {
   transition: background 150ms ease, transform 150ms ease;
 }
 
+/* Darkens the sign-in button while it is hovered. */
 .submit-button:hover {
   background: var(--accent-hover);
 }
+
 
 .submit-button:disabled {
   cursor: wait;
   opacity: 0.7;
 }
 
+
 .submit-button:active {
   transform: translateY(1px);
 }
 
+/* Adds an accessible focus outline to the sign-in button. */
 .submit-button:focus-visible {
   outline: 3px solid var(--accent-soft-strong);
   outline-offset: 2px;
 }
 
+/* Reserved style for successful status feedback. */
 .success {
   margin-top: -8px;
   color: var(--success);
   text-align: center;
 }
 
+/* Reduces page and card padding for small mobile screens. */
 @media (max-width: 520px) {
   .login-page {
     padding: 16px;
   }
 
-  .home-page {
-    padding: 16px;
-  }
-
   .login-card {
     padding: 30px 24px;
-    border-radius: 16px;
-  }
-
-  .home-card {
-    padding: 44px 24px;
     border-radius: 16px;
   }
 }
