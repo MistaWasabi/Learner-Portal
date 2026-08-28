@@ -5,6 +5,13 @@
   padding: 28px;
 }
 
+.home-page {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+}
+
 .login-card {
   width: min(100%, 420px);
   padding: 42px;
@@ -12,6 +19,16 @@
   border-radius: 20px;
   background: var(--card-bg);
   box-shadow: var(--card-shadow);
+}
+
+.home-card {
+  width: min(100%, 420px);
+  padding: 56px 42px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  text-align: center;
 }
 
 .brand-mark {
@@ -162,6 +179,11 @@ input[aria-invalid='true'] {
   background: var(--accent-hover);
 }
 
+.submit-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .submit-button:active {
   transform: translateY(1px);
 }
@@ -182,8 +204,17 @@ input[aria-invalid='true'] {
     padding: 16px;
   }
 
+  .home-page {
+    padding: 16px;
+  }
+
   .login-card {
     padding: 30px 24px;
+    border-radius: 16px;
+  }
+
+  .home-card {
+    padding: 44px 24px;
     border-radius: 16px;
   }
 }

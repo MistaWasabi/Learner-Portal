@@ -1,18 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from './firebase'
 import './App.css'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const permittedEmail = 'aidanbeckley83@gmail.com'
 
 function App() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
-  const [submitted, setSubmitted] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [isSigningIn, setIsSigningIn] = useState(false)
+  const [signedInUser, setSignedInUser] = useState(null)
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, setSignedInUser)
+  }, [])
 
   function validateEmail(value) {
     if (!value.trim()) return 'Email address is required.'
     if (!emailPattern.test(value.trim())) return 'Enter a valid email address.'
+    if (value.trim().toLowerCase() !== permittedEmail) {
+      return 'This email address is not permitted to access the portal.'
+    }
     return ''
   }
 
@@ -21,7 +33,7 @@ function App() {
     return ''
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
     const nextErrors = {
@@ -30,24 +42,45 @@ function App() {
     }
 
     setErrors(nextErrors)
-    setSubmitted(!nextErrors.email && !nextErrors.password)
+    setAuthError('')
+    setSignedInUser(null)
+
+    if (nextErrors.email || nextErrors.password) return
+
+    try {
+      setIsSigningIn(true)
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password,
+      )
+      setSignedInUser(userCredential.user)
+    } catch {
+      setAuthError('Unable to sign in with that email address and password.')
+    } finally {
+      setIsSigningIn(false)
+    }
   }
 
   function handleEmailChange(event) {
     const value = event.target.value
     setEmail(value)
-    setSubmitted(false)
+    setAuthError('')
+    setSignedInUser(null)
     if (errors.email) setErrors((current) => ({ ...current, email: validateEmail(value) }))
   }
 
   function handlePasswordChange(event) {
     const value = event.target.value
     setPassword(value)
-    setSubmitted(false)
+    setAuthError('')
+    setSignedInUser(null)
     if (errors.password) {
       setErrors((current) => ({ ...current, password: validatePassword(value) }))
     }
   }
+
+  if (signedInUser) return <HomePage />
 
   return (
     <main className="login-page">
@@ -103,13 +136,21 @@ function App() {
             {errors.password && <p id="password-error" className="error">{errors.password}</p>}
           </div>
 
-          <button className="submit-button" type="submit">Sign in</button>
-          {submitted && (
-            <p className="success" role="status">
-              Your details are valid and ready to sign in.
-            </p>
-          )}
+          <button className="submit-button" type="submit" disabled={isSigningIn}>
+            {isSigningIn ? 'Signing in...' : 'Sign in'}
+          </button>
+          {authError && <p className="error" role="alert">{authError}</p>}
         </form>
+      </section>
+    </main>
+  )
+}
+
+function HomePage() {
+  return (
+    <main className="home-page">
+      <section className="home-card" aria-labelledby="home-heading">
+        <h1 id="home-heading">Well done</h1>
       </section>
     </main>
   )
