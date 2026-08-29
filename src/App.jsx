@@ -4,7 +4,7 @@ import { auth } from './firebase'
 import './App.css'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const permittedEmail = 'aidanbeckley83@gmail.com'
+
 
 function App() {
   const [email, setEmail] = useState('')
@@ -22,9 +22,7 @@ function App() {
   function validateEmail(value) {
     if (!value.trim()) return 'Email address is required.'
     if (!emailPattern.test(value.trim())) return 'Enter a valid email address.'
-    if (value.trim().toLowerCase() !== permittedEmail) {
-      return 'This email address is not permitted to access the portal.'
-    }
+   
     return ''
   }
 
