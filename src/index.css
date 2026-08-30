@@ -1,3 +1,4 @@
+/* Global colour palette, fonts, and reusable CSS variables for the entire app. */
 :root {
   color: #263044;
   background: #f5f7fb;
@@ -22,16 +23,19 @@
   --card-shadow: 0 18px 50px rgb(30 41 59 / 10%);
 }
 
+/* Ensures padding and borders are included in every element's declared size. */
 * {
   box-sizing: border-box;
 }
 
+/* Removes default page spacing and prevents the layout becoming too narrow. */
 body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
 }
 
+/* Lets form controls inherit the same font family as surrounding application text. */
 button,
 input {
   font: inherit;
