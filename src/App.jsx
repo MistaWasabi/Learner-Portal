@@ -6,6 +6,20 @@ import './App.css'
 // Basic format check used before Firebase receives the email address.
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// Temporary summary values that will later be replaced by learner data from Firebase.
+const learningSummary = [
+  { label: 'Courses in progress', value: '3' },
+  { label: 'Lessons completed', value: '18' },
+  { label: 'Learning streak', value: '5 days' },
+]
+
+// Temporary course rows shown in the Home-page learning table.
+const courseRows = [
+  { course: 'Web Development Basics', progress: '72%', nextLesson: 'Responsive layouts' },
+  { course: 'Introduction to JavaScript', progress: '48%', nextLesson: 'Functions and scope' },
+  { course: 'Professional Communication', progress: '90%', nextLesson: 'Final assessment' },
+]
+
 /** Renders either the login form or the authenticated Home page. */
 function App() {
   // Stores the values currently typed into the login form.
@@ -161,24 +175,61 @@ function App() {
   )
 }
 
-/** Displays the signed-in user and the simple Home-page message. */
+/** Displays the signed-in user menu and temporary learner dashboard data. */
 function HomePage({ user, onSignOut }) {
   // Shows only the email text before @, with a safe fallback for missing email data.
   const userName = user.email?.split('@')[0] || 'Learner'
 
   return (
     <main className="home-page">
-      <aside className="user-sidebar" aria-label="Signed-in user menu">
-        <p className="sidebar-label">Signed in as</p>
-        <strong className="sidebar-name">{userName}</strong>
-        <button className="sign-out-button" type="button" onClick={onSignOut}>
-          Sign out
-        </button>
-      </aside>
+      <div className="home-layout">
+        <aside className="user-sidebar" aria-label="Signed-in user menu">
+          <div>
+            <div className="brand-mark sidebar-brand" aria-hidden="true">LP</div>
+            <p className="sidebar-label">Signed in as</p>
+            <strong className="sidebar-name">{userName}</strong>
+          </div>
+          <button className="sign-out-button" type="button" onClick={onSignOut}>
+            Sign out
+          </button>
+        </aside>
 
-      <section className="home-card" aria-labelledby="home-heading">
-        <h1 id="home-heading">Well done</h1>
-      </section>
+        <section className="dashboard-content" aria-labelledby="dashboard-heading">
+          <header className="dashboard-heading">
+            <p className="eyebrow">Learner Portal</p>
+            <h1 id="dashboard-heading">Learning overview</h1>
+          </header>
+
+          <div className="summary-grid" aria-label="Learning summary">
+            {/* Creates one summary card for each temporary learning metric. */}
+            {learningSummary.map((item) => (
+              <article className="summary-card" key={item.label}>
+                <p>{item.label}</p>
+                <strong>{item.value}</strong>
+              </article>
+            ))}
+          </div>
+
+          <section className="dashboard-card" aria-labelledby="courses-heading">
+            <h2 id="courses-heading">Current learning</h2>
+            <div className="learning-table" role="table" aria-label="Current courses">
+              <div className="learning-row learning-header" role="row">
+                <span role="columnheader">Course</span>
+                <span role="columnheader">Progress</span>
+                <span role="columnheader">Next lesson</span>
+              </div>
+              {/* Creates one table row for each temporary course record. */}
+              {courseRows.map((row) => (
+                <div className="learning-row" role="row" key={row.course}>
+                  <span role="cell" data-label="Course">{row.course}</span>
+                  <span role="cell" data-label="Progress">{row.progress}</span>
+                  <span role="cell" data-label="Next lesson">{row.nextLesson}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        </section>
+      </div>
     </main>
   )
 }
