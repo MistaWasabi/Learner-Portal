@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth'
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+} from 'firebase/auth'
 import { auth, authPersistenceReady } from './firebase'
 import './App.css'
 
@@ -23,6 +28,8 @@ const courseRows = [
 /** Renders either the login form or the authenticated Home page. */
 function App() {
   // Stores the values currently typed into the login form.
+  const [authMode, setAuthMode] = useState('login')
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -32,6 +39,16 @@ function App() {
   const [authError, setAuthError] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
   const [signedInUser, setSignedInUser] = useState(null)
+
+  // Identifies whether the shared form is creating an account or signing one in.
+  const isRegistration = authMode === 'register'
+
+  /** Returns a username validation message, or an empty string when valid. */
+  function validateUsername(value) {
+    if (!value.trim()) return 'Username is required.'
+    if (value.trim().length < 2) return 'Username must contain at least 2 characters.'
+    return ''
+  }
 
   /** Returns an email validation message, or an empty string when valid. */
   function validateEmail(value) {
@@ -43,15 +60,32 @@ function App() {
   /** Returns a password validation message, or an empty string when present. */
   function validatePassword(value) {
     if (!value) return 'Password is required.'
+    if (isRegistration && value.length < 6) {
+      return 'Password must contain at least 6 characters.'
+    }
     return ''
   }
 
-  /** Validates the form and signs the learner in with Firebase Authentication. */
+  /** Converts Firebase errors into clear messages for the form. */
+  function getAuthError(error) {
+    if (error.code === 'auth/email-already-in-use') {
+      return 'An account already exists with this email address.'
+    }
+    if (error.code === 'auth/weak-password') {
+      return 'Password must contain at least 6 characters.'
+    }
+    return isRegistration
+      ? 'Unable to create your account. Please try again.'
+      : 'Unable to sign in with that email address and password.'
+  }
+
+  /** Validates the form, then signs in or creates a Firebase Authentication user. */
   async function handleSubmit(event) {
     event.preventDefault()
 
     // Stores the latest validation message for each input field.
     const nextErrors = {
+      username: isRegistration ? validateUsername(username) : '',
       email: validateEmail(email),
       password: validatePassword(password),
     }
@@ -59,22 +93,41 @@ function App() {
     setErrors(nextErrors)
     setAuthError('')
 
-    if (nextErrors.email || nextErrors.password) return
+    if (nextErrors.username || nextErrors.email || nextErrors.password) return
 
     try {
       setIsSigningIn(true)
       // Applies memory-only persistence before beginning the Firebase sign-in.
       await authPersistenceReady
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password,
-      )
+      const userCredential = isRegistration
+        ? await createUserWithEmailAndPassword(auth, email.trim(), password)
+        : await signInWithEmailAndPassword(auth, email.trim(), password)
+
+      // Firebase Auth stores the requested username on the new user's profile.
+      if (isRegistration) {
+        await updateProfile(userCredential.user, { displayName: username.trim() })
+      }
+
+      // The form copies are no longer needed after Firebase has authenticated the user.
+      setUsername('')
+      setEmail('')
       setSignedInUser(userCredential.user)
-    } catch {
-      setAuthError('Unable to sign in with that email address and password.')
+    } catch (error) {
+      setAuthError(getAuthError(error))
     } finally {
+      // Removes the password from React memory after every attempt, including failures.
+      setPassword('')
       setIsSigningIn(false)
+    }
+  }
+
+  /** Updates the username field and refreshes any visible username error. */
+  function handleUsernameChange(event) {
+    const value = event.target.value
+    setUsername(value)
+    setAuthError('')
+    if (errors.username) {
+      setErrors((current) => ({ ...current, username: validateUsername(value) }))
     }
   }
 
@@ -96,10 +149,22 @@ function App() {
     }
   }
 
+  /** Switches between Login and Registration and clears form feedback. */
+  function toggleAuthMode() {
+    setAuthMode((mode) => (mode === 'login' ? 'register' : 'login'))
+    setUsername('')
+    setEmail('')
+    setPassword('')
+    setErrors({})
+    setAuthError('')
+  }
+
   /** Ends the Firebase session and returns the learner to the Login screen. */
   async function handleSignOut() {
     await signOut(auth)
     setSignedInUser(null)
+    setAuthMode('login')
+    setUsername('')
     setEmail('')
     setPassword('')
     setErrors({})
@@ -116,10 +181,34 @@ function App() {
       <section className="login-card" aria-labelledby="login-heading">
         <div className="brand-mark" aria-hidden="true">LP</div>
         <p className="eyebrow">Learner Portal</p>
-        <h1 id="login-heading">Welcome back</h1>
-        <p className="intro">Sign in to continue your learning journey.</p>
+        <h1 id="login-heading">{isRegistration ? 'Create an account' : 'Welcome back'}</h1>
+        <p className="intro">
+          {isRegistration
+            ? 'Start your learning journey with a new account.'
+            : 'Sign in to continue your learning journey.'}
+        </p>
 
-        <form noValidate onSubmit={handleSubmit}>
+        {/* Autocomplete is disabled so the app does not request browser autofill storage. */}
+        <form autoComplete="off" noValidate onSubmit={handleSubmit}>
+          {isRegistration && (
+            <div className="field-group">
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                value={username}
+                onChange={handleUsernameChange}
+                onBlur={() => setErrors((current) => ({ ...current, username: validateUsername(username) }))}
+                autoComplete="off"
+                aria-invalid={Boolean(errors.username)}
+                aria-describedby={errors.username ? 'username-error' : undefined}
+                placeholder="Choose a username"
+              />
+              {errors.username && <p id="username-error" className="error">{errors.username}</p>}
+            </div>
+          )}
+
           <div className="field-group">
             <label htmlFor="email">Email address</label>
             <input
@@ -129,7 +218,7 @@ function App() {
               value={email}
               onChange={handleEmailChange}
               onBlur={() => setErrors((current) => ({ ...current, email: validateEmail(email) }))}
-              autoComplete="email"
+              autoComplete="off"
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? 'email-error' : undefined}
               placeholder="you@example.com"
@@ -147,7 +236,7 @@ function App() {
                 value={password}
                 onChange={handlePasswordChange}
                 onBlur={() => setErrors((current) => ({ ...current, password: validatePassword(password) }))}
-                autoComplete="current-password"
+                autoComplete="off"
                 aria-invalid={Boolean(errors.password)}
                 aria-describedby={errors.password ? 'password-error' : undefined}
                 placeholder="Enter your password"
@@ -166,9 +255,17 @@ function App() {
           </div>
 
           <button className="submit-button" type="submit" disabled={isSigningIn}>
-            {isSigningIn ? 'Signing in...' : 'Sign in'}
+            {isSigningIn
+              ? isRegistration ? 'Creating account...' : 'Signing in...'
+              : isRegistration ? 'Create account' : 'Sign in'}
           </button>
           {authError && <p className="error" role="alert">{authError}</p>}
+          <p className="auth-switch">
+            {isRegistration ? 'Already have an account?' : 'New to the portal?'}{' '}
+            <button className="auth-switch-button" type="button" onClick={toggleAuthMode}>
+              {isRegistration ? 'Sign in' : 'Create an account'}
+            </button>
+          </p>
         </form>
       </section>
     </main>
@@ -177,8 +274,8 @@ function App() {
 
 /** Displays the signed-in user menu and temporary learner dashboard data. */
 function HomePage({ user, onSignOut }) {
-  // Shows only the email text before @, with a safe fallback for missing email data.
-  const userName = user.email?.split('@')[0] || 'Learner'
+  // Uses the username saved to the Firebase profile during registration.
+  const userName = user.displayName
 
   return (
     <main className="home-page">

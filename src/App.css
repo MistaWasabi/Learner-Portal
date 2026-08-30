@@ -335,6 +335,32 @@ input[aria-invalid='true'] {
   color: var(--error);
 }
 
+/* Centres the link that switches between Login and Registration. */
+.auth-switch {
+  margin: -4px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Text-style button used to move between the two authentication journeys. */
+.auth-switch-button {
+  padding: 0;
+  border: 0;
+  color: var(--accent);
+  background: transparent;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Gives the authentication mode switch a visible keyboard focus outline. */
+.auth-switch-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 /* Primary button that submits the login form. */
 .submit-button {
   min-height: 50px;

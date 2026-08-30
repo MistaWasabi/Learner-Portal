@@ -20,5 +20,6 @@ const app = initializeApp(firebaseConfig)
 // Exposes the Authentication service for use by the login and sign-out methods.
 export const auth = getAuth(app)
 
-// Promise that configures Firebase to clear authentication when the page refreshes.
+// Uses Firebase's NONE persistence: authentication stays only in live memory,
+// so this app does not create a persistent Firebase browser session or cookie.
 export const authPersistenceReady = setPersistence(auth, inMemoryPersistence)
