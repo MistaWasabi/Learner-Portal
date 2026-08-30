@@ -14,6 +14,64 @@
   padding: 28px;
 }
 
+/* Compact fixed menu for the user currently signed in to the Home page. */
+.user-sidebar {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  display: grid;
+  gap: 8px;
+  min-width: 150px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+/* Small descriptive label above the signed-in learner name. */
+.sidebar-label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* Highlights the portion of the learner's email shown in the sidebar. */
+.sidebar-name {
+  overflow: hidden;
+  color: var(--text-heading);
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ends the current Firebase session and returns to the Login page. */
+.sign-out-button {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 7px;
+  color: var(--text-heading);
+  background: transparent;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Gives the sign-out button clear pointer and keyboard feedback. */
+.sign-out-button:hover,
+.sign-out-button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Adds an accessible focus outline to the sign-out button. */
+.sign-out-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 
 .login-card {
   width: min(100%, 420px);
@@ -235,5 +293,13 @@ input[aria-invalid='true'] {
   .login-card {
     padding: 30px 24px;
     border-radius: 16px;
+  }
+
+  /* Keeps the user menu compact and away from the Home-page content on phones. */
+  .user-sidebar {
+    top: 12px;
+    left: 12px;
+    min-width: 128px;
+    padding: 12px;
   }
 }

@@ -1,39 +1,42 @@
-import { useEffect, useState } from 'react'
-import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from './firebase'
+import { useState } from 'react'
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth'
+import { auth, authPersistenceReady } from './firebase'
 import './App.css'
 
+// Basic format check used before Firebase receives the email address.
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-
+/** Renders either the login form or the authenticated Home page. */
 function App() {
+  // Stores the values currently typed into the login form.
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  // Controls interface feedback and the currently signed-in Firebase user.
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [authError, setAuthError] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
   const [signedInUser, setSignedInUser] = useState(null)
 
-  useEffect(() => {
-    return onAuthStateChanged(auth, setSignedInUser)
-  }, [])
-
+  /** Returns an email validation message, or an empty string when valid. */
   function validateEmail(value) {
     if (!value.trim()) return 'Email address is required.'
     if (!emailPattern.test(value.trim())) return 'Enter a valid email address.'
-   
     return ''
   }
 
+  /** Returns a password validation message, or an empty string when present. */
   function validatePassword(value) {
     if (!value) return 'Password is required.'
     return ''
   }
 
+  /** Validates the form and signs the learner in with Firebase Authentication. */
   async function handleSubmit(event) {
     event.preventDefault()
 
+    // Stores the latest validation message for each input field.
     const nextErrors = {
       email: validateEmail(email),
       password: validatePassword(password),
@@ -41,12 +44,13 @@ function App() {
 
     setErrors(nextErrors)
     setAuthError('')
-    setSignedInUser(null)
 
     if (nextErrors.email || nextErrors.password) return
 
     try {
       setIsSigningIn(true)
+      // Applies memory-only persistence before beginning the Firebase sign-in.
+      await authPersistenceReady
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email.trim(),
@@ -60,25 +64,38 @@ function App() {
     }
   }
 
+  /** Updates the email field and refreshes any visible email error. */
   function handleEmailChange(event) {
     const value = event.target.value
     setEmail(value)
     setAuthError('')
-    setSignedInUser(null)
     if (errors.email) setErrors((current) => ({ ...current, email: validateEmail(value) }))
   }
 
+  /** Updates the password field and refreshes any visible password error. */
   function handlePasswordChange(event) {
     const value = event.target.value
     setPassword(value)
     setAuthError('')
-    setSignedInUser(null)
     if (errors.password) {
       setErrors((current) => ({ ...current, password: validatePassword(value) }))
     }
   }
 
-  if (signedInUser) return <HomePage />
+  /** Ends the Firebase session and returns the learner to the Login screen. */
+  async function handleSignOut() {
+    await signOut(auth)
+    setSignedInUser(null)
+    setEmail('')
+    setPassword('')
+    setErrors({})
+    setAuthError('')
+  }
+
+  // A successful login replaces the form with the Home page for this session.
+  if (signedInUser) {
+    return <HomePage user={signedInUser} onSignOut={handleSignOut} />
+  }
 
   return (
     <main className="login-page">
@@ -144,9 +161,21 @@ function App() {
   )
 }
 
-function HomePage() {
+/** Displays the signed-in user and the simple Home-page message. */
+function HomePage({ user, onSignOut }) {
+  // Shows only the email text before @, with a safe fallback for missing email data.
+  const userName = user.email?.split('@')[0] || 'Learner'
+
   return (
     <main className="home-page">
+      <aside className="user-sidebar" aria-label="Signed-in user menu">
+        <p className="sidebar-label">Signed in as</p>
+        <strong className="sidebar-name">{userName}</strong>
+        <button className="sign-out-button" type="button" onClick={onSignOut}>
+          Sign out
+        </button>
+      </aside>
+
       <section className="home-card" aria-labelledby="home-heading">
         <h1 id="home-heading">Well done</h1>
       </section>
@@ -154,6 +183,7 @@ function HomePage() {
   )
 }
 
+/** Displays the eye icon used when the password is hidden. */
 function EyeIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -163,6 +193,7 @@ function EyeIcon() {
   )
 }
 
+/** Displays the crossed-out eye icon used when the password is visible. */
 function HiddenEyeIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
