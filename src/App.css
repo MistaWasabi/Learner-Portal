@@ -379,7 +379,7 @@
 
 /* Keeps Learning feedback next to the course selector that triggered it. */
 .learning-status {
-  margin: 0 0 14px;
+  margin: 0 0 var(--space-3);
   text-align: left;
 }
 
@@ -388,8 +388,8 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 18px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 .active-course-header h3 {
@@ -404,7 +404,7 @@
 /* Ordered lesson cards make the learner's intended course sequence clear. */
 .lesson-list {
   display: grid;
-  gap: 10px;
+  gap: var(--space-2);
   padding: 0;
   margin: 0;
   list-style: none;
@@ -414,8 +414,8 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
-  padding: 15px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border: 1px solid var(--border);
   border-radius: 10px;
 }
@@ -450,7 +450,7 @@
 /* Empty and loading states retain the same quiet text treatment as the other learner data screens. */
 .empty-learning-content {
   margin: 0;
-  padding: 18px;
+  padding: var(--space-4);
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--text-muted);
@@ -459,15 +459,15 @@
 
 /* Card containing a full focused workflow, such as task management or document links. */
 .dashboard-card {
-  padding: 24px;
+  padding: var(--space-4);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--space-3);
   background: var(--card-bg);
 }
 
 /* Title above the current-learning table. */
 .dashboard-card h2 {
-  margin: 0 0 18px;
+  margin: 0 0 var(--space-3);
   color: var(--text-heading);
   font-size: 18px;
 }
@@ -483,7 +483,7 @@
 }
 
 .library-heading p {
-  margin: 0 0 20px;
+  margin: 0 0 var(--space-4);
   color: var(--text-muted);
   font-size: 14px;
 }
@@ -493,8 +493,8 @@
   display: grid;
   grid-template-columns: minmax(190px, 0.9fr) minmax(250px, 1.1fr) auto;
   align-items: start;
-  gap: 18px;
-  margin-bottom: 18px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 /* Groups an upload label, its control, and any helper text. */
@@ -537,7 +537,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
+  gap: var(--space-3);
 }
 
 .task-manager-heading h2 {
@@ -545,7 +545,7 @@
 }
 
 .task-manager-heading p {
-  margin: 0 0 20px;
+  margin: 0 0 var(--space-4);
   color: var(--text-muted);
   font-size: 14px;
 }
@@ -575,8 +575,8 @@
   display: grid;
   grid-template-columns: minmax(220px, 1.5fr) minmax(120px, 0.7fr) minmax(140px, 0.8fr) minmax(110px, 0.6fr) auto;
   align-items: end;
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 /* Groups one task label and its related input or select. */
@@ -935,9 +935,9 @@
 
 .login-card {
   width: min(100%, 420px);
-  padding: 42px;
+  padding: var(--space-6);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   background: var(--card-bg);
   box-shadow: var(--card-shadow);
 }
@@ -947,7 +947,7 @@
   width: 44px;
   height: 44px;
   place-items: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-4);
   border-radius: 12px;
   color: #fff;
   background: var(--accent);
@@ -976,20 +976,20 @@ h1 {
 
 /* Supporting sentence below the login heading. */
 .intro {
-  margin: 12px 0 32px;
+  margin: var(--space-2) 0 var(--space-5);
   color: var(--text-muted);
 }
 
 /* Vertical layout and spacing for the login controls. */
 form {
   display: grid;
-  gap: 22px;
+  gap: var(--space-4);
 }
 
 /* Groups one label, input, and its validation message. */
 .field-group {
   display: grid;
-  gap: 8px;
+  gap: var(--space-1);
   text-align: left;
 }
 
@@ -1160,6 +1160,42 @@ input[aria-invalid='true'] {
   text-align: center;
 }
 
+/* Reflows multi-column content before it becomes cramped on tablets and compact laptops. */
+@media (max-width: 900px) {
+  .home-layout {
+    grid-template-columns: clamp(10.5rem, 24vw, 12rem) minmax(0, 1fr);
+  }
+
+  .dashboard-content {
+    padding: var(--space-5);
+  }
+
+  .overview-quick-access,
+  .course-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Task metadata wraps into paired fields so every input retains a usable width. */
+  .task-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .task-title-field,
+  .task-form-actions {
+    grid-column: 1 / -1;
+  }
+
+  /* Document inputs remain related while the save action moves beneath them. */
+  .document-link-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .document-save-button {
+    justify-self: start;
+    margin-top: 0;
+  }
+}
+
 /* Reduces page and card padding for small mobile screens. */
 @media (max-width: 520px) {
   .login-page {
@@ -1240,11 +1276,11 @@ input[aria-invalid='true'] {
 
   /* Reduces dashboard padding and stacks summary cards on narrow screens. */
   .dashboard-content {
-    padding: 24px 18px;
+    padding: var(--space-4);
   }
 
   .summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   /* Stacks the two Home previews after the summary cards on small screens. */
