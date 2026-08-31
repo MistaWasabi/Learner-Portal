@@ -1,0 +1,53 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+// Collection: users/{userId}/documents/{documentId}
+// Fields: name (string, 1-120), url (HTTPS string, 1-2,000), createdAt
+// (server timestamp). Every record belongs only to the userId in its path.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Checks that the request has a Firebase Auth identity.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Ensures the user can access only their own document-library path.
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Applies the same strict schema checks every time a record is written.
+    function isValidDocument() {
+      return request.resource.data.keys().hasOnly([
+          'name', 'url', 'createdAt'
+        ]) &&
+        request.resource.data.keys().hasAll([
+          'name', 'url', 'createdAt'
+        ]) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 120 &&
+        request.resource.data.url is string &&
+        request.resource.data.url.size() > 0 && request.resource.data.url.size() <= 2000 &&
+        request.resource.data.url.matches('^https://.*') &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.createdAt >= request.time - duration.value(5, 'm') &&
+        request.resource.data.createdAt <= request.time;
+    }
+
+    match /users/{userId}/documents/{documentId} {
+      // A learner can list and open only their own document-link records.
+      allow read: if isOwner(userId);
+
+      // A new record must be owned by the learner and match the strict schema.
+      allow create: if isOwner(userId) && isValidDocument();
+
+      // This first version does not support record edits, preventing metadata tampering.
+      allow update: if false;
+
+      // A learner can remove only their own link record.
+      allow delete: if isOwner(userId);
+    }
+  }
+}

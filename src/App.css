@@ -140,6 +140,173 @@
   font-size: 18px;
 }
 
+/* Adds separation above the learner's personal Firestore document library. */
+.document-library {
+  margin-top: 20px;
+}
+
+/* Keeps the document-library heading and supporting explanation together. */
+.library-heading h2 {
+  margin-bottom: 6px;
+}
+
+.library-heading p {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Compact three-column form used to save a document link and title. */
+.document-link-form {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.9fr) minmax(250px, 1.1fr) auto;
+  align-items: start;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+/* Groups an upload label, its control, and any helper text. */
+.document-inputs {
+  display: grid;
+  gap: 7px;
+}
+
+.document-help {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.document-help {
+  margin: 0;
+}
+
+/* Primary action for adding a link to the signed-in learner's library. */
+.document-save-button,
+.document-open-button {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.document-save-button:hover,
+.document-open-button:hover {
+  background: var(--accent-hover);
+}
+
+.document-save-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.document-save-button:focus-visible,
+.document-open-button:focus-visible {
+  outline: 3px solid var(--accent-soft-strong);
+  outline-offset: 2px;
+}
+
+/* Aligns the save action with the form inputs while labels remain level above them. */
+.document-save-button {
+  align-self: start;
+  margin-top: 27px;
+}
+
+/* Makes Firestore feedback visually distinct from the upload form. */
+.library-status {
+  margin: 0 0 14px;
+  text-align: left;
+}
+
+/* Separates each Firestore document record into a readable, compact row. */
+.document-list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.document-item:first-child {
+  border-top: 0;
+}
+
+.document-item h3,
+.document-item p,
+.empty-library {
+  margin: 0;
+}
+
+.document-item h3 {
+  color: var(--text-heading);
+  font-size: 14px;
+}
+
+.document-item p,
+.empty-library {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.empty-library {
+  padding: 18px;
+  margin-top: 0;
+}
+
+.document-open-button {
+  display: inline-grid;
+  min-height: 38px;
+  place-items: center;
+  padding: 0 13px;
+}
+
+/* Groups the non-destructive open action and the destructive delete action together. */
+.document-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+/* Makes deletion distinct while retaining clear keyboard focus feedback. */
+.document-delete-button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid color-mix(in srgb, var(--error) 35%, var(--border));
+  border-radius: 9px;
+  color: var(--error);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.document-delete-button:hover {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+}
+
+.document-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.document-delete-button:focus-visible {
+  outline: 2px solid var(--error);
+  outline-offset: 2px;
+}
+
 /* Container for the temporary tabular course information. */
 .learning-table {
   overflow: hidden;
@@ -449,6 +616,29 @@ input[aria-invalid='true'] {
 
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Stacks the document fields and action button for narrow mobile screens. */
+  .document-link-form {
+    grid-template-columns: 1fr;
+  }
+
+  .document-save-button {
+    width: 100%;
+    margin-top: 0;
+  }
+
+  .document-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .document-actions {
+    width: 100%;
+  }
+
+  .document-actions > * {
+    flex: 1;
   }
 
   /* Turns each course row into a labelled vertical block for readability. */
