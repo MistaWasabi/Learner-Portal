@@ -5,7 +5,7 @@ import {
   signOut,
   updateProfile,
 } from 'firebase/auth'
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, authPersistenceReady, db } from './firebase'
 import './App.css'
 
@@ -19,8 +19,50 @@ const taskPriorities = ['low', 'medium', 'high']
 // One source of truth keeps the sidebar labels and the selected screen in sync.
 const portalScreens = [
   { id: 'home', label: 'Home' },
+  { id: 'learning', label: 'Learning' },
   { id: 'tasks', label: 'Task manager' },
   { id: 'documents', label: 'Document library' },
+]
+
+// Course content is kept in the application for this learner-facing first version.
+// Firestore stores only which courses each learner has personally selected.
+const courseCatalog = [
+  {
+    id: 'web-development-basics',
+    title: 'Web Development Basics',
+    level: 'Beginner',
+    duration: '3 hours',
+    description: 'Understand how webpages are structured, styled, and delivered in a browser.',
+    lessons: [
+      { id: 'html-foundations', title: 'HTML foundations', duration: '35 min', summary: 'Build meaningful page structure with headings, paragraphs, links, and lists.' },
+      { id: 'css-layouts', title: 'CSS layouts', duration: '45 min', summary: 'Use spacing, Flexbox, and Grid to arrange content clearly.' },
+      { id: 'responsive-design', title: 'Responsive design', duration: '40 min', summary: 'Adapt a page so it works well on phones, tablets, and desktops.' },
+    ],
+  },
+  {
+    id: 'javascript-fundamentals',
+    title: 'JavaScript Fundamentals',
+    level: 'Beginner',
+    duration: '4 hours',
+    description: 'Learn the building blocks used to add behaviour and logic to a webpage.',
+    lessons: [
+      { id: 'variables-values', title: 'Variables and values', duration: '40 min', summary: 'Store and reuse information with clear variable names and data types.' },
+      { id: 'conditions-loops', title: 'Conditions and loops', duration: '50 min', summary: 'Make decisions and repeat work with predictable program flow.' },
+      { id: 'functions-events', title: 'Functions and events', duration: '50 min', summary: 'Organise reusable code and respond to learner actions in the browser.' },
+    ],
+  },
+  {
+    id: 'professional-communication',
+    title: 'Professional Communication',
+    level: 'Essential',
+    duration: '2 hours',
+    description: 'Practise clear written communication for teamwork, support, and professional learning.',
+    lessons: [
+      { id: 'clear-messages', title: 'Writing clear messages', duration: '30 min', summary: 'Structure short messages so their purpose and next step are easy to understand.' },
+      { id: 'feedback', title: 'Giving useful feedback', duration: '35 min', summary: 'Give specific, respectful feedback that helps a teammate improve.' },
+      { id: 'professional-email', title: 'Professional email', duration: '30 min', summary: 'Use subject lines, tone, and structure appropriate for a workplace email.' },
+    ],
+  },
 ]
 
 // Creates fresh state whenever the task form is cleared after a save or cancelled edit.
@@ -326,6 +368,7 @@ function HomePage({ user, onSignOut }) {
           </header>
 
           {activeScreen === 'home' && <HomeOverview user={user} onNavigate={setActiveScreen} />}
+          {activeScreen === 'learning' && <LearningContent user={user} />}
           {activeScreen === 'tasks' && <TaskManager user={user} />}
           {activeScreen === 'documents' && <DocumentLibrary user={user} />}
         </section>
@@ -338,6 +381,7 @@ function HomePage({ user, onSignOut }) {
 function HomeOverview({ user, onNavigate }) {
   // Stores only the small amount of learner-owned data required for the dashboard totals.
   const [tasks, setTasks] = useState([])
+  const [courseCount, setCourseCount] = useState(0)
   const [documentCount, setDocumentCount] = useState(0)
   const [overviewError, setOverviewError] = useState('')
 
@@ -353,11 +397,17 @@ function HomeOverview({ user, onNavigate }) {
       (snapshot) => setDocumentCount(snapshot.size),
       () => setOverviewError('Your latest portal totals could not be loaded. Please try again.'),
     )
+    const courseUnsubscribe = onSnapshot(
+      collection(db, 'users', user.uid, 'courseSelections'),
+      (snapshot) => setCourseCount(snapshot.size),
+      () => setOverviewError('Your latest portal totals could not be loaded. Please try again.'),
+    )
 
-    // Stops both real-time listeners when the learner leaves Home or signs out.
+    // Stops all real-time listeners when the learner leaves Home or signs out.
     return () => {
       taskUnsubscribe()
       documentUnsubscribe()
+      courseUnsubscribe()
     }
   }, [user.uid])
 
@@ -368,6 +418,7 @@ function HomeOverview({ user, onNavigate }) {
   const completionRate = tasks.length ? Math.round((completedTaskCount / tasks.length) * 100) : 0
 
   const summaryItems = [
+    { label: 'Courses selected', value: courseCount },
     { label: 'Total tasks', value: tasks.length },
     { label: 'Completed', value: completedTaskCount },
     { label: 'Outstanding', value: outstandingTaskCount },
@@ -390,6 +441,14 @@ function HomeOverview({ user, onNavigate }) {
 
       <section className="overview-quick-access" aria-label="Portal sections">
         <article className="overview-card">
+          <p className="overview-label">Learning</p>
+          <strong>{courseCount} selected course{courseCount === 1 ? '' : 's'}</strong>
+          <p>Choose a course and explore its lessons at your own pace.</p>
+          <button className="overview-button" type="button" onClick={() => onNavigate('learning')}>
+            Open learning
+          </button>
+        </article>
+        <article className="overview-card">
           <p className="overview-label">Task manager</p>
           <strong>{completionRate}% complete</strong>
           <p>Manage all {tasks.length} learning task{tasks.length === 1 ? '' : 's'} in one place.</p>
@@ -405,6 +464,175 @@ function HomeOverview({ user, onNavigate }) {
             Open document library
           </button>
         </article>
+      </section>
+    </div>
+  )
+}
+
+/** Lets a learner choose private courses and view the lessons included in each selected course. */
+function LearningContent({ user }) {
+  // Firestore contains only this learner's selections; the shared lesson text remains read-only application content.
+  const [selectedCourseIds, setSelectedCourseIds] = useState([])
+  const [activeCourseId, setActiveCourseId] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSavingCourseId, setIsSavingCourseId] = useState('')
+  const [learningError, setLearningError] = useState('')
+  const [learningSuccess, setLearningSuccess] = useState('')
+
+  useEffect(() => {
+    const selectionsReference = collection(db, 'users', user.uid, 'courseSelections')
+
+    // A live listener makes selections consistent between open portal tabs without saving data in the browser.
+    const unsubscribe = onSnapshot(
+      selectionsReference,
+      (snapshot) => {
+        const validCourseIds = snapshot.docs
+          .map((courseSnapshot) => courseSnapshot.data().courseId)
+          .filter((courseId) => courseCatalog.some((course) => course.id === courseId))
+        setSelectedCourseIds(validCourseIds)
+        setLearningError('')
+        setIsLoading(false)
+      },
+      (error) => {
+        setLearningError(getLearningContentError(error, 'load'))
+        setIsLoading(false)
+      },
+    )
+
+    // Removes the real-time connection when this focused screen is no longer shown.
+    return unsubscribe
+  }, [user.uid])
+
+  // Deriving the fallback avoids a second state update when a course selection changes in Firestore.
+  const activeCourse = courseCatalog.find((course) => course.id === activeCourseId && selectedCourseIds.includes(course.id))
+    ?? courseCatalog.find((course) => selectedCourseIds.includes(course.id))
+
+  /** Adds one known course to the learner's private Firestore selection collection. */
+  async function handleCourseSelect(course) {
+    setLearningError('')
+    setLearningSuccess('')
+
+    try {
+      setIsSavingCourseId(course.id)
+      // A predictable document ID prevents duplicate selections for the same course.
+      await setDoc(doc(db, 'users', user.uid, 'courseSelections', course.id), {
+        courseId: course.id,
+        enrolledAt: serverTimestamp(),
+      })
+      setActiveCourseId(course.id)
+      setLearningSuccess(`${course.title} was added to your learning.`)
+    } catch (error) {
+      setLearningError(getLearningContentError(error, 'save'))
+    } finally {
+      setIsSavingCourseId('')
+    }
+  }
+
+  /** Removes a course selection without changing the shared course content for anyone else. */
+  async function handleCourseRemove(course) {
+    const shouldRemove = window.confirm(`Remove “${course.title}” from your learning?`)
+
+    if (!shouldRemove) return
+
+    setLearningError('')
+    setLearningSuccess('')
+
+    try {
+      setIsSavingCourseId(course.id)
+      await deleteDoc(doc(db, 'users', user.uid, 'courseSelections', course.id))
+      setLearningSuccess(`${course.title} was removed from your learning.`)
+    } catch (error) {
+      setLearningError(getLearningContentError(error, 'delete'))
+    } finally {
+      setIsSavingCourseId('')
+    }
+  }
+
+  return (
+    <div className="learning-content">
+      <section className="dashboard-card course-catalog" aria-labelledby="course-catalog-heading">
+        <div className="learning-section-heading">
+          <div>
+            <h2 id="course-catalog-heading">Choose a course</h2>
+            <p>Select the topics you want to include in your personal learning plan.</p>
+          </div>
+        </div>
+
+        {learningError && <p className="error learning-status" role="alert">{learningError}</p>}
+        {learningSuccess && <p className="success learning-status" role="status">{learningSuccess}</p>}
+
+        <div className="course-grid" aria-live="polite">
+          {courseCatalog.map((course) => {
+            const isSelected = selectedCourseIds.includes(course.id)
+            const isSaving = isSavingCourseId === course.id
+
+            return (
+              <article className={`course-card ${isSelected ? 'course-card-selected' : ''}`} key={course.id}>
+                <div>
+                  <p className="course-meta">{course.level} · {course.duration}</p>
+                  <h3>{course.title}</h3>
+                  <p>{course.description}</p>
+                </div>
+                <div className="course-card-actions">
+                  {isSelected ? (
+                    <>
+                      <button className="course-view-button" type="button" onClick={() => setActiveCourseId(course.id)}>
+                        View lessons
+                      </button>
+                      <button className="course-remove-button" type="button" onClick={() => handleCourseRemove(course)} disabled={isSaving}>
+                        {isSaving ? 'Removing...' : 'Remove'}
+                      </button>
+                    </>
+                  ) : (
+                    <button className="course-select-button" type="button" onClick={() => handleCourseSelect(course)} disabled={isSaving || isLoading}>
+                      {isSaving ? 'Adding...' : 'Add to my learning'}
+                    </button>
+                  )}
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="dashboard-card lesson-content" aria-labelledby="lesson-content-heading">
+        <div className="learning-section-heading">
+          <div>
+            <h2 id="lesson-content-heading">Course content</h2>
+            <p>Open a selected course to see the lessons included in its learning path.</p>
+          </div>
+        </div>
+
+        {isLoading && <p className="empty-learning-content">Loading your selected courses...</p>}
+        {!isLoading && !learningError && !activeCourse && (
+          <p className="empty-learning-content">Select a course above to begin exploring its lessons.</p>
+        )}
+        {activeCourse && (
+          <div className="active-course-content">
+            <div className="active-course-header">
+              <div>
+                <p className="course-meta">{activeCourse.level} · {activeCourse.duration}</p>
+                <h3>{activeCourse.title}</h3>
+                <p>{activeCourse.description}</p>
+              </div>
+              <button className="course-remove-button" type="button" onClick={() => handleCourseRemove(activeCourse)} disabled={isSavingCourseId === activeCourse.id}>
+                {isSavingCourseId === activeCourse.id ? 'Removing...' : 'Remove course'}
+              </button>
+            </div>
+            <ol className="lesson-list">
+              {activeCourse.lessons.map((lesson, index) => (
+                <li className="lesson-item" key={lesson.id}>
+                  <span className="lesson-number" aria-hidden="true">{index + 1}</span>
+                  <div>
+                    <h4>{lesson.title}</h4>
+                    <p>{lesson.summary}</p>
+                  </div>
+                  <span className="lesson-duration">{lesson.duration}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
       </section>
     </div>
   )
@@ -873,6 +1101,16 @@ function getTaskManagerError(error, action) {
   if (action === 'load') return 'Your tasks could not be loaded. Please try again.'
   if (action === 'delete') return 'Your task could not be deleted. Please try again.'
   return 'Your task could not be saved. Please try again.'
+}
+
+/** Returns learner-friendly course-selection feedback without exposing Firebase implementation details. */
+function getLearningContentError(error, action) {
+  if (error.code === 'permission-denied') {
+    return 'Firestore has blocked this action. Publish the latest Firestore rules and try again.'
+  }
+  if (action === 'load') return 'Your selected courses could not be loaded. Please try again.'
+  if (action === 'delete') return 'Your course could not be removed. Please try again.'
+  return 'Your course could not be added. Please try again.'
 }
 
 /** Returns today's calendar date in the learner's local timezone for task due-date comparisons. */

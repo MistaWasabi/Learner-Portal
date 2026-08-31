@@ -8,6 +8,11 @@
 // Fields: title (string, 1-120), category (string, 1-40), dueDate (YYYY-MM-DD
 // string), priority (low/medium/high), completed (boolean), createdAt (timestamp,
 // immutable after creation). Every task belongs only to the userId in its path.
+// Collection: users/{userId}/courseSelections/{courseId}
+// Fields: courseId (one of the application catalogue IDs and equal to the document
+// ID), enrolledAt (recent server timestamp, immutable). Every selection belongs
+// only to the userId in its path. Shared course content is not stored in Firestore
+// in this first version, so learners cannot alter it.
 
 rules_version = '2';
 service cloud.firestore {
@@ -20,6 +25,16 @@ service cloud.firestore {
     // Ensures the user can access only their own document-library path.
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Included for future records that store a user ID; the current schemas use the path as ownership.
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    // Prevents a stored user ID from being changed if a future schema needs one.
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
     }
 
     // Applies the same strict schema checks every time a record is written.
@@ -59,6 +74,26 @@ service cloud.firestore {
         request.resource.data.createdAt is timestamp;
     }
 
+    // Limits selections to the fixed course catalogue and blocks arbitrary data from being written.
+    function isValidCourseSelection(courseId) {
+      return request.resource.data.keys().hasOnly([
+          'courseId', 'enrolledAt'
+        ]) &&
+        request.resource.data.keys().hasAll([
+          'courseId', 'enrolledAt'
+        ]) &&
+        request.resource.data.courseId is string &&
+        request.resource.data.courseId == courseId &&
+        request.resource.data.courseId in [
+          'web-development-basics',
+          'javascript-fundamentals',
+          'professional-communication'
+        ] &&
+        request.resource.data.enrolledAt is timestamp &&
+        request.resource.data.enrolledAt >= request.time - duration.value(5, 'm') &&
+        request.resource.data.enrolledAt <= request.time;
+    }
+
     match /users/{userId}/documents/{documentId} {
       // A learner can list and open only their own document-link records.
       allow read: if isOwner(userId);
@@ -87,6 +122,20 @@ service cloud.firestore {
         request.resource.data.createdAt == resource.data.createdAt;
 
       // A learner can remove only a task located in their own path.
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/courseSelections/{courseId} {
+      // A learner can read only the course IDs they have personally selected.
+      allow read: if isOwner(userId);
+
+      // A selection must use a known course ID and a recent server timestamp.
+      allow create: if isOwner(userId) && isValidCourseSelection(courseId);
+
+      // Learners remove and re-add a selection rather than altering its immutable enrolment data.
+      allow update: if false;
+
+      // A learner can remove only a course selection in their own Firestore path.
       allow delete: if isOwner(userId);
     }
   }
