@@ -49,13 +49,53 @@
   font-size: 12px;
 }
 
-/* Highlights the portion of the learner's email shown in the sidebar. */
+/* Highlights the username saved to the learner's Firebase profile. */
 .sidebar-name {
   overflow: hidden;
   color: var(--text-heading);
   font-size: 16px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Groups screen-selection controls below the signed-in learner details. */
+.sidebar-navigation {
+  display: grid;
+  gap: 6px;
+  margin-top: 30px;
+}
+
+/* Gives each screen a clear, keyboard-accessible sidebar navigation control. */
+.sidebar-nav-button {
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: transparent;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Provides feedback while a learner points to or tabs to a different screen. */
+.sidebar-nav-button:hover,
+.sidebar-nav-button:focus-visible {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Keeps the selected section visible without relying on hover alone. */
+.sidebar-nav-active {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Makes keyboard navigation visible for learners who do not use a mouse. */
+.sidebar-nav-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* Ends the current Firebase session and returns to the Login page. */
@@ -85,26 +125,26 @@
   outline-offset: 2px;
 }
 
-/* Main column containing the temporary learner data. */
+/* Main column containing the currently selected learner screen. */
 .dashboard-content {
   padding: 42px;
   background: var(--card-bg);
 }
 
-/* Space beneath the Home-page title. */
+/* Space beneath each selected screen title. */
 .dashboard-heading {
   margin-bottom: 30px;
 }
 
-/* Three-column row of temporary learning-summary cards. */
+/* Responsive row of compact Home-page task summary cards. */
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 20px;
 }
 
-/* Individual summary value card. */
+/* Individual live summary value card. */
 .summary-card {
   padding: 18px;
   border: 1px solid var(--border);
@@ -112,20 +152,87 @@
   background: var(--accent-soft);
 }
 
-/* Label inside each temporary summary card. */
+/* Label inside each Home-page summary card. */
 .summary-card p {
   margin: 0 0 8px;
   color: var(--text-muted);
   font-size: 13px;
 }
 
-/* Main summary value inside each temporary summary card. */
+/* Main summary value inside each Home-page summary card. */
 .summary-card strong {
   color: var(--text-heading);
   font-size: 22px;
 }
 
-/* Card containing the temporary row-and-column course data. */
+/* Places the condensed Task and Document summaries side by side on Home. */
+.overview-quick-access {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* Gives each Home-page section preview the same card language as the focused screens. */
+.overview-card {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+
+.overview-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.overview-card strong {
+  color: var(--text-heading);
+  font-size: 22px;
+}
+
+/* Uses uppercase helper text to distinguish the preview's section name from its live value. */
+.overview-card .overview-label {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* The quick-access button moves to the detailed screen without resetting application state. */
+.overview-button {
+  justify-self: start;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  color: var(--accent);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.overview-button:hover,
+.overview-button:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.overview-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Keeps a loading problem close to the live Home totals it affects. */
+.overview-status {
+  margin: 0 0 14px;
+}
+
+/* Card containing a full focused workflow, such as task management or document links. */
 .dashboard-card {
   padding: 24px;
   border: 1px solid var(--border);
@@ -140,9 +247,9 @@
   font-size: 18px;
 }
 
-/* Adds separation above the learner's personal Firestore document library. */
+/* The document library is a dedicated screen, so it no longer needs extra Home-page separation. */
 .document-library {
-  margin-top: 20px;
+  margin-top: 0;
 }
 
 /* Keeps the document-library heading and supporting explanation together. */
@@ -195,9 +302,9 @@
   cursor: pointer;
 }
 
-/* Separates the task workflow from courses and the document-link library. */
+/* The task manager is a dedicated screen, so it no longer needs extra Home-page separation. */
 .task-manager {
-  margin-top: 20px;
+  margin-top: 0;
 }
 
 /* Places the task filter beside the heading without crowding the explanatory copy. */
@@ -849,10 +956,9 @@ input[aria-invalid='true'] {
     border-radius: 16px;
   }
 
-  /* Converts the sidebar into a compact horizontal user bar on phones. */
+  /* Stacks account details, navigation, and sign-out so every control remains tappable on phones. */
   .user-sidebar {
-    flex-direction: row;
-    align-items: center;
+    align-items: stretch;
     gap: 16px;
     padding: 18px;
     border-right: 0;
@@ -863,9 +969,21 @@ input[aria-invalid='true'] {
     display: none;
   }
 
+  /* Keeps the three destination buttons compact while retaining a sensible reading order. */
+  .sidebar-navigation {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 16px;
+  }
+
+  .sidebar-nav-button {
+    padding: 8px 6px;
+    font-size: 12px;
+    text-align: center;
+  }
+
   .sign-out-button {
+    align-self: flex-start;
     margin-top: 0;
-    margin-left: auto;
   }
 
   /* Reduces dashboard padding and stacks summary cards on narrow screens. */
@@ -874,6 +992,11 @@ input[aria-invalid='true'] {
   }
 
   .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Stacks the two Home previews after the summary cards on small screens. */
+  .overview-quick-access {
     grid-template-columns: 1fr;
   }
 

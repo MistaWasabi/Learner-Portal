@@ -12,23 +12,16 @@ import './App.css'
 // Basic format check used before Firebase receives the email address.
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-// Temporary summary values that will later be replaced by learner data from Firebase.
-const learningSummary = [
-  { label: 'Courses in progress', value: '3' },
-  { label: 'Lessons completed', value: '18' },
-  { label: 'Learning streak', value: '5 days' },
-]
-
-// Temporary course rows shown in the Home-page learning table.
-const courseRows = [
-  { course: 'Web Development Basics', progress: '72%', nextLesson: 'Responsive layouts' },
-  { course: 'Introduction to JavaScript', progress: '48%', nextLesson: 'Functions and scope' },
-  { course: 'Professional Communication', progress: '90%', nextLesson: 'Final assessment' },
-]
-
 // Select options keep the first task version focused while still giving learners useful choices.
 const taskCategories = ['General', 'JavaScript', 'Project', 'Support']
 const taskPriorities = ['low', 'medium', 'high']
+
+// One source of truth keeps the sidebar labels and the selected screen in sync.
+const portalScreens = [
+  { id: 'home', label: 'Home' },
+  { id: 'tasks', label: 'Task manager' },
+  { id: 'documents', label: 'Document library' },
+]
 
 // Creates fresh state whenever the task form is cleared after a save or cancelled edit.
 function createEmptyTask() {
@@ -288,10 +281,15 @@ function App() {
   )
 }
 
-/** Displays the signed-in user menu and temporary learner dashboard data. */
+/** Displays the signed-in user menu and swaps between the portal's focused screens. */
 function HomePage({ user, onSignOut }) {
   // Uses the username saved to the Firebase profile during registration.
   const userName = user.displayName
+  // Home is the default screen for every new in-memory session.
+  const [activeScreen, setActiveScreen] = useState('home')
+
+  // Keeps the heading meaningful when the learner moves between the sidebar sections.
+  const activeScreenLabel = portalScreens.find((screen) => screen.id === activeScreen)?.label ?? 'Home'
 
   return (
     <main className="home-page">
@@ -301,6 +299,20 @@ function HomePage({ user, onSignOut }) {
             <div className="brand-mark sidebar-brand" aria-hidden="true">LP</div>
             <p className="sidebar-label">Signed in as</p>
             <strong className="sidebar-name">{userName}</strong>
+            <nav className="sidebar-navigation" aria-label="Portal navigation">
+              {/* Buttons update local screen state instead of reloading the authenticated application. */}
+              {portalScreens.map((screen) => (
+                <button
+                  className={`sidebar-nav-button ${activeScreen === screen.id ? 'sidebar-nav-active' : ''}`}
+                  type="button"
+                  key={screen.id}
+                  onClick={() => setActiveScreen(screen.id)}
+                  aria-current={activeScreen === screen.id ? 'page' : undefined}
+                >
+                  {screen.label}
+                </button>
+              ))}
+            </nav>
           </div>
           <button className="sign-out-button" type="button" onClick={onSignOut}>
             Sign out
@@ -310,46 +322,91 @@ function HomePage({ user, onSignOut }) {
         <section className="dashboard-content" aria-labelledby="dashboard-heading">
           <header className="dashboard-heading">
             <p className="eyebrow">Learner Portal</p>
-            <h1 id="dashboard-heading">Learning overview</h1>
+            <h1 id="dashboard-heading">{activeScreenLabel}</h1>
           </header>
 
-          <div className="summary-grid" aria-label="Learning summary">
-            {/* Creates one summary card for each temporary learning metric. */}
-            {learningSummary.map((item) => (
-              <article className="summary-card" key={item.label}>
-                <p>{item.label}</p>
-                <strong>{item.value}</strong>
-              </article>
-            ))}
-          </div>
-
-          <section className="dashboard-card" aria-labelledby="courses-heading">
-            <h2 id="courses-heading">Current learning</h2>
-            <div className="learning-table" role="table" aria-label="Current courses">
-              <div className="learning-row learning-header" role="row">
-                <span role="columnheader">Course</span>
-                <span role="columnheader">Progress</span>
-                <span role="columnheader">Next lesson</span>
-              </div>
-              {/* Creates one table row for each temporary course record. */}
-              {courseRows.map((row) => (
-                <div className="learning-row" role="row" key={row.course}>
-                  <span role="cell" data-label="Course">{row.course}</span>
-                  <span role="cell" data-label="Progress">{row.progress}</span>
-                  <span role="cell" data-label="Next lesson">{row.nextLesson}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Gives learners a real, user-owned Firestore task workflow. */}
-          <TaskManager user={user} />
-
-          {/* Keeps each learner's document links in a separate Firestore-backed library. */}
-          <DocumentLibrary user={user} />
+          {activeScreen === 'home' && <HomeOverview user={user} onNavigate={setActiveScreen} />}
+          {activeScreen === 'tasks' && <TaskManager user={user} />}
+          {activeScreen === 'documents' && <DocumentLibrary user={user} />}
         </section>
       </div>
     </main>
+  )
+}
+
+/** Displays a compact, live overview while leaving detailed workflows on their own screens. */
+function HomeOverview({ user, onNavigate }) {
+  // Stores only the small amount of learner-owned data required for the dashboard totals.
+  const [tasks, setTasks] = useState([])
+  const [documentCount, setDocumentCount] = useState(0)
+  const [overviewError, setOverviewError] = useState('')
+
+  useEffect(() => {
+    // These paths match the owner-only Firestore rules, so the overview never reads another learner's data.
+    const taskUnsubscribe = onSnapshot(
+      collection(db, 'users', user.uid, 'tasks'),
+      (snapshot) => setTasks(snapshot.docs.map((taskSnapshot) => taskSnapshot.data())),
+      () => setOverviewError('Your latest portal totals could not be loaded. Please try again.'),
+    )
+    const documentUnsubscribe = onSnapshot(
+      collection(db, 'users', user.uid, 'documents'),
+      (snapshot) => setDocumentCount(snapshot.size),
+      () => setOverviewError('Your latest portal totals could not be loaded. Please try again.'),
+    )
+
+    // Stops both real-time listeners when the learner leaves Home or signs out.
+    return () => {
+      taskUnsubscribe()
+      documentUnsubscribe()
+    }
+  }, [user.uid])
+
+  const completedTaskCount = tasks.filter((task) => task.completed).length
+  const outstandingTaskCount = tasks.length - completedTaskCount
+  // Comparing ISO-style date strings makes the overdue total reliable without storing a browser-specific date object.
+  const overdueTaskCount = tasks.filter((task) => !task.completed && task.dueDate && task.dueDate < getLocalDateKey()).length
+  const completionRate = tasks.length ? Math.round((completedTaskCount / tasks.length) * 100) : 0
+
+  const summaryItems = [
+    { label: 'Total tasks', value: tasks.length },
+    { label: 'Completed', value: completedTaskCount },
+    { label: 'Outstanding', value: outstandingTaskCount },
+    { label: 'Overdue', value: overdueTaskCount },
+  ]
+
+  return (
+    <div className="home-overview">
+      {overviewError && <p className="error overview-status" role="alert">{overviewError}</p>}
+
+      <section className="summary-grid" aria-label="Task summary">
+        {/* The Home screen summarises real Firestore task data instead of duplicating the full task workflow. */}
+        {summaryItems.map((item) => (
+          <article className="summary-card" key={item.label}>
+            <p>{item.label}</p>
+            <strong>{item.value}</strong>
+          </article>
+        ))}
+      </section>
+
+      <section className="overview-quick-access" aria-label="Portal sections">
+        <article className="overview-card">
+          <p className="overview-label">Task manager</p>
+          <strong>{completionRate}% complete</strong>
+          <p>Manage all {tasks.length} learning task{tasks.length === 1 ? '' : 's'} in one place.</p>
+          <button className="overview-button" type="button" onClick={() => onNavigate('tasks')}>
+            Open task manager
+          </button>
+        </article>
+        <article className="overview-card">
+          <p className="overview-label">Document library</p>
+          <strong>{documentCount} saved link{documentCount === 1 ? '' : 's'}</strong>
+          <p>Keep your learning-document links organised and available to you.</p>
+          <button className="overview-button" type="button" onClick={() => onNavigate('documents')}>
+            Open document library
+          </button>
+        </article>
+      </section>
+    </div>
   )
 }
 
@@ -816,6 +873,15 @@ function getTaskManagerError(error, action) {
   if (action === 'load') return 'Your tasks could not be loaded. Please try again.'
   if (action === 'delete') return 'Your task could not be deleted. Please try again.'
   return 'Your task could not be saved. Please try again.'
+}
+
+/** Returns today's calendar date in the learner's local timezone for task due-date comparisons. */
+function getLocalDateKey() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 /** Formats the stored YYYY-MM-DD task due date for the learner-facing list. */
