@@ -1,6 +1,12 @@
-import { useState } from 'react'
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth'
-import { auth, authPersistenceReady } from './firebase'
+import { useEffect, useState } from 'react'
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+} from 'firebase/auth'
+import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { auth, authPersistenceReady, db } from './firebase'
 import './App.css'
 
 // Basic format check used before Firebase receives the email address.
@@ -20,9 +26,26 @@ const courseRows = [
   { course: 'Professional Communication', progress: '90%', nextLesson: 'Final assessment' },
 ]
 
+// Select options keep the first task version focused while still giving learners useful choices.
+const taskCategories = ['General', 'JavaScript', 'Project', 'Support']
+const taskPriorities = ['low', 'medium', 'high']
+
+// Creates fresh state whenever the task form is cleared after a save or cancelled edit.
+function createEmptyTask() {
+  return {
+    title: '',
+    category: 'General',
+    dueDate: '',
+    priority: 'medium',
+    completed: false,
+  }
+}
+
 /** Renders either the login form or the authenticated Home page. */
 function App() {
   // Stores the values currently typed into the login form.
+  const [authMode, setAuthMode] = useState('login')
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -32,6 +55,16 @@ function App() {
   const [authError, setAuthError] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
   const [signedInUser, setSignedInUser] = useState(null)
+
+  // Identifies whether the shared form is creating an account or signing one in.
+  const isRegistration = authMode === 'register'
+
+  /** Returns a username validation message, or an empty string when valid. */
+  function validateUsername(value) {
+    if (!value.trim()) return 'Username is required.'
+    if (value.trim().length < 2) return 'Username must contain at least 2 characters.'
+    return ''
+  }
 
   /** Returns an email validation message, or an empty string when valid. */
   function validateEmail(value) {
@@ -43,15 +76,32 @@ function App() {
   /** Returns a password validation message, or an empty string when present. */
   function validatePassword(value) {
     if (!value) return 'Password is required.'
+    if (isRegistration && value.length < 6) {
+      return 'Password must contain at least 6 characters.'
+    }
     return ''
   }
 
-  /** Validates the form and signs the learner in with Firebase Authentication. */
+  /** Converts Firebase errors into clear messages for the form. */
+  function getAuthError(error) {
+    if (error.code === 'auth/email-already-in-use') {
+      return 'An account already exists with this email address.'
+    }
+    if (error.code === 'auth/weak-password') {
+      return 'Password must contain at least 6 characters.'
+    }
+    return isRegistration
+      ? 'Unable to create your account. Please try again.'
+      : 'Unable to sign in with that email address and password.'
+  }
+
+  /** Validates the form, then signs in or creates a Firebase Authentication user. */
   async function handleSubmit(event) {
     event.preventDefault()
 
     // Stores the latest validation message for each input field.
     const nextErrors = {
+      username: isRegistration ? validateUsername(username) : '',
       email: validateEmail(email),
       password: validatePassword(password),
     }
@@ -59,22 +109,41 @@ function App() {
     setErrors(nextErrors)
     setAuthError('')
 
-    if (nextErrors.email || nextErrors.password) return
+    if (nextErrors.username || nextErrors.email || nextErrors.password) return
 
     try {
       setIsSigningIn(true)
       // Applies memory-only persistence before beginning the Firebase sign-in.
       await authPersistenceReady
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password,
-      )
+      const userCredential = isRegistration
+        ? await createUserWithEmailAndPassword(auth, email.trim(), password)
+        : await signInWithEmailAndPassword(auth, email.trim(), password)
+
+      // Firebase Auth stores the requested username on the new user's profile.
+      if (isRegistration) {
+        await updateProfile(userCredential.user, { displayName: username.trim() })
+      }
+
+      // The form copies are no longer needed after Firebase has authenticated the user.
+      setUsername('')
+      setEmail('')
       setSignedInUser(userCredential.user)
-    } catch {
-      setAuthError('Unable to sign in with that email address and password.')
+    } catch (error) {
+      setAuthError(getAuthError(error))
     } finally {
+      // Removes the password from React memory after every attempt, including failures.
+      setPassword('')
       setIsSigningIn(false)
+    }
+  }
+
+  /** Updates the username field and refreshes any visible username error. */
+  function handleUsernameChange(event) {
+    const value = event.target.value
+    setUsername(value)
+    setAuthError('')
+    if (errors.username) {
+      setErrors((current) => ({ ...current, username: validateUsername(value) }))
     }
   }
 
@@ -96,10 +165,22 @@ function App() {
     }
   }
 
+  /** Switches between Login and Registration and clears form feedback. */
+  function toggleAuthMode() {
+    setAuthMode((mode) => (mode === 'login' ? 'register' : 'login'))
+    setUsername('')
+    setEmail('')
+    setPassword('')
+    setErrors({})
+    setAuthError('')
+  }
+
   /** Ends the Firebase session and returns the learner to the Login screen. */
   async function handleSignOut() {
     await signOut(auth)
     setSignedInUser(null)
+    setAuthMode('login')
+    setUsername('')
     setEmail('')
     setPassword('')
     setErrors({})
@@ -116,10 +197,34 @@ function App() {
       <section className="login-card" aria-labelledby="login-heading">
         <div className="brand-mark" aria-hidden="true">LP</div>
         <p className="eyebrow">Learner Portal</p>
-        <h1 id="login-heading">Welcome back</h1>
-        <p className="intro">Sign in to continue your learning journey.</p>
+        <h1 id="login-heading">{isRegistration ? 'Create an account' : 'Welcome back'}</h1>
+        <p className="intro">
+          {isRegistration
+            ? 'Start your learning journey with a new account.'
+            : 'Sign in to continue your learning journey.'}
+        </p>
 
-        <form noValidate onSubmit={handleSubmit}>
+        {/* Autocomplete is disabled so the app does not request browser autofill storage. */}
+        <form autoComplete="off" noValidate onSubmit={handleSubmit}>
+          {isRegistration && (
+            <div className="field-group">
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                value={username}
+                onChange={handleUsernameChange}
+                onBlur={() => setErrors((current) => ({ ...current, username: validateUsername(username) }))}
+                autoComplete="off"
+                aria-invalid={Boolean(errors.username)}
+                aria-describedby={errors.username ? 'username-error' : undefined}
+                placeholder="Choose a username"
+              />
+              {errors.username && <p id="username-error" className="error">{errors.username}</p>}
+            </div>
+          )}
+
           <div className="field-group">
             <label htmlFor="email">Email address</label>
             <input
@@ -129,7 +234,7 @@ function App() {
               value={email}
               onChange={handleEmailChange}
               onBlur={() => setErrors((current) => ({ ...current, email: validateEmail(email) }))}
-              autoComplete="email"
+              autoComplete="off"
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? 'email-error' : undefined}
               placeholder="you@example.com"
@@ -147,7 +252,7 @@ function App() {
                 value={password}
                 onChange={handlePasswordChange}
                 onBlur={() => setErrors((current) => ({ ...current, password: validatePassword(password) }))}
-                autoComplete="current-password"
+                autoComplete="off"
                 aria-invalid={Boolean(errors.password)}
                 aria-describedby={errors.password ? 'password-error' : undefined}
                 placeholder="Enter your password"
@@ -166,9 +271,17 @@ function App() {
           </div>
 
           <button className="submit-button" type="submit" disabled={isSigningIn}>
-            {isSigningIn ? 'Signing in...' : 'Sign in'}
+            {isSigningIn
+              ? isRegistration ? 'Creating account...' : 'Signing in...'
+              : isRegistration ? 'Create account' : 'Sign in'}
           </button>
           {authError && <p className="error" role="alert">{authError}</p>}
+          <p className="auth-switch">
+            {isRegistration ? 'Already have an account?' : 'New to the portal?'}{' '}
+            <button className="auth-switch-button" type="button" onClick={toggleAuthMode}>
+              {isRegistration ? 'Sign in' : 'Create an account'}
+            </button>
+          </p>
         </form>
       </section>
     </main>
@@ -177,8 +290,8 @@ function App() {
 
 /** Displays the signed-in user menu and temporary learner dashboard data. */
 function HomePage({ user, onSignOut }) {
-  // Shows only the email text before @, with a safe fallback for missing email data.
-  const userName = user.email?.split('@')[0] || 'Learner'
+  // Uses the username saved to the Firebase profile during registration.
+  const userName = user.displayName
 
   return (
     <main className="home-page">
@@ -228,10 +341,493 @@ function HomePage({ user, onSignOut }) {
               ))}
             </div>
           </section>
+
+          {/* Gives learners a real, user-owned Firestore task workflow. */}
+          <TaskManager user={user} />
+
+          {/* Keeps each learner's document links in a separate Firestore-backed library. */}
+          <DocumentLibrary user={user} />
         </section>
       </div>
     </main>
   )
+}
+
+/** Creates, reads, updates, filters, completes, and deletes the learner's own tasks. */
+function TaskManager({ user }) {
+  // Holds the real-time Firestore records and the form state used to create or edit a task.
+  const [tasks, setTasks] = useState([])
+  const [taskForm, setTaskForm] = useState(createEmptyTask)
+  const [editingTaskId, setEditingTaskId] = useState('')
+  const [taskFilter, setTaskFilter] = useState('all')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingTaskId, setDeletingTaskId] = useState('')
+  const [taskError, setTaskError] = useState('')
+  const [taskSuccess, setTaskSuccess] = useState('')
+
+  // Each learner listens only to their own tasks, with the newest task shown first.
+  useEffect(() => {
+    const taskCollection = collection(db, 'users', user.uid, 'tasks')
+    const taskQuery = query(taskCollection, orderBy('createdAt', 'desc'))
+
+    const unsubscribe = onSnapshot(
+      taskQuery,
+      (snapshot) => {
+        setTasks(snapshot.docs.map((taskSnapshot) => ({
+          id: taskSnapshot.id,
+          ...taskSnapshot.data(),
+        })))
+        setTaskError('')
+        setIsLoading(false)
+      },
+      (error) => {
+        setTaskError(getTaskManagerError(error, 'load'))
+        setIsLoading(false)
+      },
+    )
+
+    // Ends the listener when the learner signs out, preventing unnecessary reads.
+    return unsubscribe
+  }, [user.uid])
+
+  // Uses Array.filter to provide a clear client-side view of all, active, or completed tasks.
+  const visibleTasks = tasks.filter((task) => {
+    if (taskFilter === 'active') return !task.completed
+    if (taskFilter === 'completed') return task.completed
+    return true
+  })
+
+  /** Updates one form value without mutating the previous React state object. */
+  function handleTaskFieldChange(event) {
+    const { name, value } = event.target
+    setTaskForm((current) => ({ ...current, [name]: value }))
+  }
+
+  /** Validates the fields before Firestore receives the new or changed task. */
+  function validateTask() {
+    if (!taskForm.title.trim()) return 'Task title is required.'
+    if (taskForm.title.trim().length > 120) return 'Task title must be 120 characters or fewer.'
+    if (!taskForm.dueDate) return 'Choose a due date.'
+    if (!taskCategories.includes(taskForm.category)) return 'Choose a valid task category.'
+    if (!taskPriorities.includes(taskForm.priority)) return 'Choose a valid priority.'
+    return ''
+  }
+
+  /** Creates a task or saves edits while keeping the immutable creation date unchanged. */
+  async function handleTaskSubmit(event) {
+    event.preventDefault()
+
+    const validationMessage = validateTask()
+    setTaskError(validationMessage)
+    setTaskSuccess('')
+    if (validationMessage) return
+
+    const taskData = {
+      title: taskForm.title.trim(),
+      category: taskForm.category,
+      dueDate: taskForm.dueDate,
+      priority: taskForm.priority,
+      completed: taskForm.completed,
+    }
+
+    try {
+      setIsSaving(true)
+
+      if (editingTaskId) {
+        // updateDoc changes only the editable fields; the rules keep createdAt immutable.
+        await updateDoc(doc(db, 'users', user.uid, 'tasks', editingTaskId), taskData)
+        setTaskSuccess('Task updated.')
+      } else {
+        // addDoc creates a Firestore document with an automatic ID for this learner's task.
+        await addDoc(collection(db, 'users', user.uid, 'tasks'), {
+          ...taskData,
+          createdAt: serverTimestamp(),
+        })
+        setTaskSuccess('Task added.')
+      }
+
+      setTaskForm(createEmptyTask())
+      setEditingTaskId('')
+    } catch (error) {
+      setTaskError(getTaskManagerError(error, 'save'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  /** Loads a stored task into the shared form so the learner can edit it. */
+  function handleTaskEdit(task) {
+    setTaskForm({
+      title: task.title,
+      category: task.category,
+      dueDate: task.dueDate,
+      priority: task.priority,
+      completed: task.completed,
+    })
+    setEditingTaskId(task.id)
+    setTaskError('')
+    setTaskSuccess('Editing task. Save changes when you are ready.')
+  }
+
+  /** Stops editing and restores a blank task form without changing Firestore data. */
+  function cancelTaskEdit() {
+    setTaskForm(createEmptyTask())
+    setEditingTaskId('')
+    setTaskError('')
+    setTaskSuccess('')
+  }
+
+  /** Changes only the completed flag for a task, preserving all other task details. */
+  async function handleTaskCompletion(task) {
+    setTaskError('')
+    setTaskSuccess('')
+
+    try {
+      await updateDoc(doc(db, 'users', user.uid, 'tasks', task.id), {
+        completed: !task.completed,
+      })
+    } catch (error) {
+      setTaskError(getTaskManagerError(error, 'save'))
+    }
+  }
+
+  /** Confirms and deletes a task only from the current learner's Firestore path. */
+  async function handleTaskDelete(task) {
+    const shouldDelete = window.confirm(`Delete “${task.title}”? This cannot be undone.`)
+
+    if (!shouldDelete) return
+
+    setTaskError('')
+    setTaskSuccess('')
+
+    try {
+      setDeletingTaskId(task.id)
+      await deleteDoc(doc(db, 'users', user.uid, 'tasks', task.id))
+      if (editingTaskId === task.id) cancelTaskEdit()
+      setTaskSuccess('Task deleted.')
+    } catch (error) {
+      setTaskError(getTaskManagerError(error, 'delete'))
+    } finally {
+      setDeletingTaskId('')
+    }
+  }
+
+  return (
+    <section className="dashboard-card task-manager" aria-labelledby="tasks-heading">
+      <div className="task-manager-heading">
+        <div>
+          <h2 id="tasks-heading">Task manager</h2>
+          <p>Add, complete, edit, or remove tasks from your learning plan.</p>
+        </div>
+        <label className="task-filter-control" htmlFor="task-filter">
+          Show
+          <select id="task-filter" value={taskFilter} onChange={(event) => setTaskFilter(event.target.value)}>
+            <option value="all">All tasks</option>
+            <option value="active">Active tasks</option>
+            <option value="completed">Completed tasks</option>
+          </select>
+        </label>
+      </div>
+
+      <form className="task-form" onSubmit={handleTaskSubmit} noValidate>
+        <div className="task-field task-title-field">
+          <label htmlFor="task-title">Task title</label>
+          <input
+            id="task-title"
+            name="title"
+            type="text"
+            value={taskForm.title}
+            onChange={handleTaskFieldChange}
+            maxLength="120"
+            placeholder="For example, finish JavaScript exercise"
+          />
+        </div>
+        <div className="task-field">
+          <label htmlFor="task-category">Category</label>
+          <select id="task-category" name="category" value={taskForm.category} onChange={handleTaskFieldChange}>
+            {taskCategories.map((category) => <option key={category}>{category}</option>)}
+          </select>
+        </div>
+        <div className="task-field">
+          <label htmlFor="task-due-date">Due date</label>
+          <input id="task-due-date" name="dueDate" type="date" value={taskForm.dueDate} onChange={handleTaskFieldChange} />
+        </div>
+        <div className="task-field">
+          <label htmlFor="task-priority">Priority</label>
+          <select id="task-priority" name="priority" value={taskForm.priority} onChange={handleTaskFieldChange}>
+            {taskPriorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+          </select>
+        </div>
+        <div className="task-form-actions">
+          <button className="task-save-button" type="submit" disabled={isSaving}>
+            {isSaving ? 'Saving task...' : editingTaskId ? 'Save changes' : 'Add task'}
+          </button>
+          {editingTaskId && (
+            <button className="task-cancel-button" type="button" onClick={cancelTaskEdit}>
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      {taskError && <p className="error task-status" role="alert">{taskError}</p>}
+      {taskSuccess && <p className="success task-status" role="status">{taskSuccess}</p>}
+
+      <div className="task-list" aria-live="polite">
+        {isLoading && <p className="empty-task-list">Loading your tasks...</p>}
+        {!isLoading && !taskError && visibleTasks.length === 0 && (
+          <p className="empty-task-list">No {taskFilter === 'all' ? '' : taskFilter} tasks to show.</p>
+        )}
+        {visibleTasks.map((task) => (
+          <article className={`task-item ${task.completed ? 'task-completed' : ''}`} key={task.id}>
+            <label className="task-complete-control">
+              <input
+                type="checkbox"
+                checked={Boolean(task.completed)}
+                onChange={() => handleTaskCompletion(task)}
+                aria-label={`Mark ${task.title} as ${task.completed ? 'not completed' : 'completed'}`}
+              />
+              <span aria-hidden="true" />
+            </label>
+            <div className="task-details">
+              <h3>{task.title}</h3>
+              <p>{task.category} · Due {formatTaskDueDate(task.dueDate)}</p>
+            </div>
+            <div className="task-badges" aria-label="Task priority">
+              <span className={`priority-badge priority-${task.priority}`}>{task.priority}</span>
+            </div>
+            <div className="task-actions">
+              <button className="task-edit-button" type="button" onClick={() => handleTaskEdit(task)}>
+                Edit
+              </button>
+              <button
+                className="task-delete-button"
+                type="button"
+                onClick={() => handleTaskDelete(task)}
+                disabled={deletingTaskId === task.id}
+              >
+                {deletingTaskId === task.id ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/** Lists and saves the current learner's non-relational document-link records. */
+function DocumentLibrary({ user }) {
+  // Tracks Firestore records, link-form input, and clear feedback for this one learner.
+  const [documents, setDocuments] = useState([])
+  const [documentTitle, setDocumentTitle] = useState('')
+  const [documentUrl, setDocumentUrl] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingDocumentId, setDeletingDocumentId] = useState('')
+  const [loadError, setLoadError] = useState('')
+  const [saveError, setSaveError] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState('')
+
+  // Firestore subcollections provide a simple non-relational, user-owned document structure.
+  useEffect(() => {
+    const documentCollection = collection(db, 'users', user.uid, 'documents')
+    const documentQuery = query(documentCollection, orderBy('createdAt', 'desc'))
+
+    // Keeps the library in sync when a document record is added, changed, or removed.
+    const unsubscribe = onSnapshot(
+      documentQuery,
+      (snapshot) => {
+        setDocuments(snapshot.docs.map((documentSnapshot) => ({
+          id: documentSnapshot.id,
+          ...documentSnapshot.data(),
+        })))
+        setLoadError('')
+        setIsLoading(false)
+      },
+      (error) => {
+        setLoadError(getDocumentLibraryError(error, 'load'))
+        setIsLoading(false)
+      },
+    )
+
+    // Stops the real-time listener when the learner signs out or the component closes.
+    return unsubscribe
+  }, [user.uid])
+
+  /** Validates an external document link, then stores its small record in Firestore. */
+  async function handleDocumentSave(event) {
+    event.preventDefault()
+
+    setSaveError('')
+    setSaveSuccess('')
+
+    if (!documentTitle.trim()) {
+      setSaveError('Document title is required.')
+      return
+    }
+
+    let safeUrl
+    try {
+      safeUrl = new URL(documentUrl.trim())
+    } catch {
+      setSaveError('Enter a complete HTTPS document link.')
+      return
+    }
+
+    if (safeUrl.protocol !== 'https:') {
+      setSaveError('Use a secure HTTPS document link.')
+      return
+    }
+
+    try {
+      setIsSaving(true)
+
+      // Firestore stores only small structured link data, avoiding a paid file-storage dependency.
+      await addDoc(collection(db, 'users', user.uid, 'documents'), {
+        name: documentTitle.trim(),
+        url: safeUrl.toString(),
+        createdAt: serverTimestamp(),
+      })
+
+      // Clears the public link form after Firestore creates the learner-owned record.
+      setDocumentTitle('')
+      setDocumentUrl('')
+      setSaveSuccess('Document link added to your library.')
+    } catch (error) {
+      setSaveError(getDocumentLibraryError(error, 'save'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  /** Confirms and removes the selected learner-owned link record from Firestore. */
+  async function handleDocumentDelete(documentRecord) {
+    const shouldDelete = window.confirm(`Delete “${documentRecord.name}” from your document library?`)
+
+    if (!shouldDelete) return
+
+    setSaveError('')
+    setSaveSuccess('')
+
+    try {
+      setDeletingDocumentId(documentRecord.id)
+      // The Firestore rules also verify that this path belongs to the signed-in user.
+      await deleteDoc(doc(db, 'users', user.uid, 'documents', documentRecord.id))
+      setSaveSuccess('Document link deleted. You can save a replacement link at any time.')
+    } catch (error) {
+      setSaveError(getDocumentLibraryError(error, 'delete'))
+    } finally {
+      setDeletingDocumentId('')
+    }
+  }
+
+  return (
+    <section className="dashboard-card document-library" aria-labelledby="documents-heading">
+      <div className="library-heading">
+        <div>
+          <h2 id="documents-heading">Document library</h2>
+          <p>Save private links to your learning documents without uploading files to Firebase.</p>
+        </div>
+      </div>
+
+      <form className="document-link-form" onSubmit={handleDocumentSave} noValidate>
+        <div className="document-inputs">
+          <label htmlFor="document-title">Document title</label>
+          <input
+            id="document-title"
+            type="text"
+            value={documentTitle}
+            onChange={(event) => setDocumentTitle(event.target.value)}
+            maxLength="120"
+            placeholder="For example, JavaScript notes"
+          />
+        </div>
+        <div className="document-inputs">
+          <label htmlFor="document-url">Document link</label>
+          <input
+            id="document-url"
+            type="url"
+            value={documentUrl}
+            onChange={(event) => setDocumentUrl(event.target.value)}
+            placeholder="https://drive.google.com/..."
+            aria-describedby="document-help"
+          />
+          <p id="document-help" className="document-help">Use a shareable HTTPS link, such as a Google Drive document.</p>
+        </div>
+        <button className="document-save-button" type="submit" disabled={isSaving}>
+          {isSaving ? 'Saving link...' : 'Save document link'}
+        </button>
+      </form>
+
+      {saveError && <p className="error library-status" role="alert">{saveError}</p>}
+      {saveSuccess && <p className="success library-status" role="status">{saveSuccess}</p>}
+      {loadError && <p className="error library-status" role="alert">{loadError}</p>}
+
+      <div className="document-list" aria-live="polite">
+        {isLoading && <p className="empty-library">Loading your documents...</p>}
+        {!isLoading && !loadError && documents.length === 0 && (
+          <p className="empty-library">No document links yet. Save your first learning link above.</p>
+        )}
+        {documents.map((document) => (
+          <article className="document-item" key={document.id}>
+            <div>
+              <h3>{document.name}</h3>
+              <p>Added {formatUploadDate(document.createdAt)}</p>
+            </div>
+            <div className="document-actions">
+              <a className="document-open-button" href={document.url} target="_blank" rel="noreferrer">
+                Open
+              </a>
+              <button
+                className="document-delete-button"
+                type="button"
+                onClick={() => handleDocumentDelete(document)}
+                disabled={deletingDocumentId === document.id}
+              >
+                {deletingDocumentId === document.id ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/** Turns Firestore failures into messages a learner can act on. */
+function getDocumentLibraryError(error, action) {
+  if (error.code === 'permission-denied') {
+    return 'Firestore has blocked this action. Check that the Firestore rules have been published.'
+  }
+  return action === 'load'
+    ? 'Your document library could not be loaded. Please try again.'
+    : action === 'delete'
+      ? 'Your document link could not be deleted. Please try again.'
+      : 'Your document link could not be saved. Please try again.'
+}
+
+/** Returns task-specific Firebase feedback without exposing technical error details to learners. */
+function getTaskManagerError(error, action) {
+  if (error.code === 'permission-denied') {
+    return 'Firestore has blocked this action. Publish the latest Firestore rules and try again.'
+  }
+  if (action === 'load') return 'Your tasks could not be loaded. Please try again.'
+  if (action === 'delete') return 'Your task could not be deleted. Please try again.'
+  return 'Your task could not be saved. Please try again.'
+}
+
+/** Formats the stored YYYY-MM-DD task due date for the learner-facing list. */
+function formatTaskDueDate(dueDate) {
+  if (!dueDate) return 'no date set'
+  return new Intl.DateTimeFormat('en-ZA', { dateStyle: 'medium' }).format(new Date(`${dueDate}T00:00:00`))
+}
+
+/** Formats Firestore timestamps while still handling a pending server timestamp. */
+function formatUploadDate(timestamp) {
+  if (!timestamp?.toDate) return 'Saving date...'
+  return new Intl.DateTimeFormat('en-ZA', { dateStyle: 'medium' }).format(timestamp.toDate())
 }
 
 /** Displays the eye icon used when the password is hidden. */

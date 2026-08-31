@@ -140,6 +140,432 @@
   font-size: 18px;
 }
 
+/* Adds separation above the learner's personal Firestore document library. */
+.document-library {
+  margin-top: 20px;
+}
+
+/* Keeps the document-library heading and supporting explanation together. */
+.library-heading h2 {
+  margin-bottom: 6px;
+}
+
+.library-heading p {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Compact three-column form used to save a document link and title. */
+.document-link-form {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.9fr) minmax(250px, 1.1fr) auto;
+  align-items: start;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+/* Groups an upload label, its control, and any helper text. */
+.document-inputs {
+  display: grid;
+  gap: 7px;
+}
+
+.document-help {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.document-help {
+  margin: 0;
+}
+
+/* Primary action for adding a link to the signed-in learner's library. */
+.document-save-button,
+.document-open-button {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Separates the task workflow from courses and the document-link library. */
+.task-manager {
+  margin-top: 20px;
+}
+
+/* Places the task filter beside the heading without crowding the explanatory copy. */
+.task-manager-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.task-manager-heading h2 {
+  margin-bottom: 6px;
+}
+
+.task-manager-heading p {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Compact label and select control used to filter the visible task array. */
+.task-filter-control {
+  display: grid;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* Allows task selects to share the same sizing and border treatment as inputs. */
+.task-filter-control select,
+.task-field select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  color: var(--text-heading);
+  background: var(--input-bg);
+  font: inherit;
+}
+
+/* Creates a responsive grid for the task title, metadata, and save controls. */
+.task-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) minmax(120px, 0.7fr) minmax(140px, 0.8fr) minmax(110px, 0.6fr) auto;
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+/* Groups one task label and its related input or select. */
+.task-field {
+  display: grid;
+  gap: 7px;
+}
+
+.task-field input,
+.task-field select {
+  min-height: 44px;
+}
+
+/* Keeps task save and cancel actions aligned with the form controls. */
+.task-form-actions,
+.task-actions 
+{
+  display: flex;
+  gap: 8px;
+}
+
+.task-form-actions 
+{
+  align-items: center;
+}
+
+/* Uses the established portal accent for task creation and updates. */
+.task-save-button,
+.task-edit-button,
+.task-delete-button,
+.task-cancel-button 
+{
+  min-height: 42px;
+  padding: 0 13px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.task-save-button 
+{
+  border: 0;
+  color: #fff;
+  background: var(--accent);
+}
+
+.task-save-button:hover {
+  background: var(--accent-hover);
+}
+
+.task-save-button:disabled,
+.task-delete-button:disabled 
+{
+  cursor: wait;
+  opacity: 0.7;
+}
+
+/* Secondary task actions stay visible without competing with the primary save button. */
+.task-edit-button,
+.task-cancel-button 
+{
+  border: 1px solid var(--input-border);
+  color: var(--text-heading);
+  background: transparent;
+}
+
+.task-edit-button:hover,
+.task-cancel-button:hover 
+{
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Makes the destructive task action visibly different from editing. */
+.task-delete-button {
+  border: 1px solid color-mix(in srgb, var(--error) 35%, var(--border));
+  color: var(--error);
+  background: transparent;
+}
+
+.task-delete-button:hover {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+}
+
+.task-save-button:focus-visible,
+.task-edit-button:focus-visible,
+.task-delete-button:focus-visible,
+.task-cancel-button:focus-visible,
+.task-filter-control select:focus-visible,
+.task-field select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Keeps task feedback close to the task form it describes. */
+.task-status {
+  margin: 0 0 14px;
+  text-align: left;
+}
+
+/* Provides a consistent bordered container for live Firestore task records. */
+.task-list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.task-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.task-item:first-child {
+  border-top: 0;
+}
+
+.task-completed .task-details h3 {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+/* Replaces the browser checkbox appearance with a clearer rounded completion marker. */
+.task-complete-control {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  cursor: pointer;
+}
+
+.task-complete-control input {
+  position: absolute;
+  width: 1px;
+  min-height: 1px;
+  opacity: 0;
+}
+
+.task-complete-control span {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--input-border);
+  border-radius: 50%;
+}
+
+.task-complete-control input:checked + span {
+  border-color: var(--success);
+  background: var(--success);
+  box-shadow: inset 0 0 0 4px var(--card-bg);
+}
+
+.task-complete-control input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.task-details h3,
+.task-details p,
+.empty-task-list {
+  margin: 0;
+}
+
+.task-details h3 {
+  color: var(--text-heading);
+  font-size: 14px;
+}
+
+.task-details p,
+.empty-task-list {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.empty-task-list {
+  padding: 18px;
+  margin-top: 0;
+}
+
+/* Small badge communicates urgency without relying on colour alone. */
+.priority-badge {
+  display: inline-block;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.priority-low {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.priority-medium {
+  color: #a16207;
+  background: #fef9c3;
+}
+
+.priority-high {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.document-save-button:hover,
+.document-open-button:hover {
+  background: var(--accent-hover);
+}
+
+.document-save-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.document-save-button:focus-visible,
+.document-open-button:focus-visible {
+  outline: 3px solid var(--accent-soft-strong);
+  outline-offset: 2px;
+}
+
+/* Aligns the save action with the form inputs while labels remain level above them. */
+.document-save-button {
+  align-self: start;
+  margin-top: 27px;
+}
+
+/* Makes Firestore feedback visually distinct from the upload form. */
+.library-status {
+  margin: 0 0 14px;
+  text-align: left;
+}
+
+/* Separates each Firestore document record into a readable, compact row. */
+.document-list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.document-item:first-child {
+  border-top: 0;
+}
+
+.document-item h3,
+.document-item p,
+.empty-library {
+  margin: 0;
+}
+
+.document-item h3 {
+  color: var(--text-heading);
+  font-size: 14px;
+}
+
+.document-item p,
+.empty-library {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.empty-library {
+  padding: 18px;
+  margin-top: 0;
+}
+
+.document-open-button {
+  display: inline-grid;
+  min-height: 38px;
+  place-items: center;
+  padding: 0 13px;
+}
+
+/* Groups the non-destructive open action and the destructive delete action together. */
+.document-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+/* Makes deletion distinct while retaining clear keyboard focus feedback. */
+.document-delete-button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid color-mix(in srgb, var(--error) 35%, var(--border));
+  border-radius: 9px;
+  color: var(--error);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.document-delete-button:hover {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+}
+
+.document-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.document-delete-button:focus-visible {
+  outline: 2px solid var(--error);
+  outline-offset: 2px;
+}
+
 /* Container for the temporary tabular course information. */
 .learning-table {
   overflow: hidden;
@@ -335,6 +761,32 @@ input[aria-invalid='true'] {
   color: var(--error);
 }
 
+/* Centres the link that switches between Login and Registration. */
+.auth-switch {
+  margin: -4px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Text-style button used to move between the two authentication journeys. */
+.auth-switch-button {
+  padding: 0;
+  border: 0;
+  color: var(--accent);
+  background: transparent;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Gives the authentication mode switch a visible keyboard focus outline. */
+.auth-switch-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 /* Primary button that submits the login form. */
 .submit-button {
   min-height: 50px;
@@ -423,6 +875,62 @@ input[aria-invalid='true'] {
 
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Stacks task controls so they remain readable and tap-friendly on phones. */
+  .task-manager-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .task-filter-control {
+    width: 100%;
+  }
+
+  .task-form {
+    grid-template-columns: 1fr;
+  }
+
+  .task-form-actions,
+  .task-form-actions > * {
+    width: 100%;
+  }
+
+  .task-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .task-badges,
+  .task-actions {
+    grid-column: 2;
+  }
+
+  .task-actions,
+  .task-actions > * {
+    width: 100%;
+  }
+
+  /* Stacks the document fields and action button for narrow mobile screens. */
+  .document-link-form {
+    grid-template-columns: 1fr;
+  }
+
+  .document-save-button {
+    width: 100%;
+    margin-top: 0;
+  }
+
+  .document-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .document-actions {
+    width: 100%;
+  }
+
+  .document-actions > * {
+    flex: 1;
   }
 
   /* Turns each course row into a labelled vertical block for readability. */
