@@ -4,6 +4,10 @@
 // Collection: users/{userId}/documents/{documentId}
 // Fields: name (string, 1-120), url (HTTPS string, 1-2,000), createdAt
 // (server timestamp). Every record belongs only to the userId in its path.
+// Collection: users/{userId}/tasks/{taskId}
+// Fields: title (string, 1-120), category (string, 1-40), dueDate (YYYY-MM-DD
+// string), priority (low/medium/high), completed (boolean), createdAt (timestamp,
+// immutable after creation). Every task belongs only to the userId in its path.
 
 rules_version = '2';
 service cloud.firestore {
@@ -36,6 +40,25 @@ service cloud.firestore {
         request.resource.data.createdAt <= request.time;
     }
 
+    // Requires a predictable task schema on both creates and updates.
+    function isValidTask() {
+      return request.resource.data.keys().hasOnly([
+          'title', 'category', 'dueDate', 'priority', 'completed', 'createdAt'
+        ]) &&
+        request.resource.data.keys().hasAll([
+          'title', 'category', 'dueDate', 'priority', 'completed', 'createdAt'
+        ]) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 120 &&
+        request.resource.data.category is string &&
+        request.resource.data.category.size() > 0 && request.resource.data.category.size() <= 40 &&
+        request.resource.data.dueDate is string &&
+        request.resource.data.dueDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+        request.resource.data.priority in ['low', 'medium', 'high'] &&
+        request.resource.data.completed is bool &&
+        request.resource.data.createdAt is timestamp;
+    }
+
     match /users/{userId}/documents/{documentId} {
       // A learner can list and open only their own document-link records.
       allow read: if isOwner(userId);
@@ -47,6 +70,23 @@ service cloud.firestore {
       allow update: if false;
 
       // A learner can remove only their own link record.
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/tasks/{taskId} {
+      // A learner can list and view only the tasks stored in their own path.
+      allow read: if isOwner(userId);
+
+      // New tasks must be owned, fully valid, and created with a recent server timestamp.
+      allow create: if isOwner(userId) && isValidTask() &&
+        request.resource.data.createdAt >= request.time - duration.value(5, 'm') &&
+        request.resource.data.createdAt <= request.time;
+
+      // Updates validate the whole future task document and protect its original creation date.
+      allow update: if isOwner(userId) && isValidTask() &&
+        request.resource.data.createdAt == resource.data.createdAt;
+
+      // A learner can remove only a task located in their own path.
       allow delete: if isOwner(userId);
     }
   }

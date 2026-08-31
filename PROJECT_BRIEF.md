@@ -71,6 +71,12 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - A record contains a title, an external HTTPS document link, and a creation date. Firebase does not store the document file itself.
 - `firestore.rules` is a prototype owner-only rule set that must be reviewed and published in the Firebase Console before document links will work.
 
+## Current Firestore Task Manager
+
+- The Home page includes a private Task Manager at `users/{uid}/tasks/{taskId}`.
+- Learners can add, read, edit, complete, filter, and delete only their own tasks.
+- The Firestore version demonstrates non-relational, user-owned CRUD. The separate assessment requirement for Realtime Database REST CRUD remains outstanding.
+
 ## Suggested Build Order
 
 1. Create the Realtime Database structure and identity-based security rules.

@@ -6,10 +6,15 @@
 - **Query:** the signed-in learner listens only to their own subcollection, ordered by `createdAt` descending.
 - **Writes:** the application creates a new document-link record. It does not update the record in this first version.
 - **Files:** Firebase does not receive file bytes. A learner stores an external HTTPS link, such as a Google Drive document link.
+- **Task path:** `users/{uid}/tasks/{taskId}`.
+- **Task query:** the signed-in learner listens only to their own tasks, ordered by `createdAt` descending.
+- **Task actions:** create, read, edit, mark complete, filter in the browser, and delete after confirmation.
 
 ## Record shape
 
 Every Firestore record contains `name`, `url`, and `createdAt`. The Firestore rules require all three fields, reject unexpected fields, limit title and URL lengths, require HTTPS, and require a recent server timestamp.
+
+Every task record contains `title`, `category`, `dueDate`, `priority`, `completed`, and `createdAt`. The rules use the same strict validator for creates and updates, restrict priority values, keep `createdAt` immutable after creation, and scope each task to its owner's path.
 
 ## Prototype-rule attack review
 
@@ -21,6 +26,9 @@ Every Firestore record contains `name`, `url`, and `createdAt`. The Firestore ru
 | Learner changes metadata later | Denied: updates are intentionally disabled; the learner must delete and save a replacement link. |
 | Learner deletes another learner's record | Denied: the path `userId` must match `request.auth.uid`. |
 | Learner adds a role or arbitrary field | Denied: the strict schema permits only the three defined fields. |
+| Learner creates an invalid task or extra task field | Denied: task schema, type, priority, and date-format checks apply. |
+| Learner changes a task's creation date | Denied: `createdAt` must remain unchanged on updates. |
+| Learner edits or deletes another learner's task | Denied: the path `userId` must match `request.auth.uid`. |
 
 ## Publishing checklist
 
