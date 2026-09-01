@@ -173,7 +173,7 @@
 /* Places the condensed Task and Document summaries side by side on Home. */
 .overview-quick-access {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--space-3);
 }
 
@@ -401,6 +401,14 @@
   margin: 10px 0 0;
 }
 
+/* Shows each selected course's completion total without taking attention from the lesson list. */
+.active-course-header .course-progress-label {
+  margin-top: var(--space-3);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 /* Ordered lesson cards make the learner's intended course sequence clear. */
 .lesson-list {
   display: grid;
@@ -445,6 +453,119 @@
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* Groups lesson duration with its completion action so a learner can update progress at the point of study. */
+.lesson-actions {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-2);
+}
+
+.lesson-completion-button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 7px;
+  color: var(--accent);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lesson-completion-button:hover,
+.lesson-completion-button:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.lesson-completion-button-complete {
+  border-color: color-mix(in srgb, var(--success) 42%, var(--border));
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 9%, transparent);
+}
+
+.lesson-completion-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.lesson-completion-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Shared progress records are presented as a simple, readable list instead of exposing private lesson data. */
+.learner-progress-heading h2 {
+  margin-bottom: var(--space-1);
+}
+
+.learner-progress-heading p {
+  margin: 0 0 var(--space-4);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.progress-status {
+  margin: 0 0 var(--space-3);
+}
+
+.learner-progress-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.learner-progress-item {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(120px, 0.9fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.learner-progress-item h3,
+.learner-progress-item p {
+  margin: 0;
+}
+
+.learner-progress-item h3 {
+  color: var(--text-heading);
+  font-size: 15px;
+}
+
+.learner-progress-item p {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.learner-progress-item .progress-last-updated {
+  font-size: 12px;
+}
+
+/* A text label accompanies the bar so completion is understandable without relying on colour alone. */
+.progress-meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--accent-soft);
+}
+
+.progress-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.learner-progress-item > strong {
+  color: var(--text-heading);
+  font-size: 14px;
 }
 
 /* Empty and loading states retain the same quiet text treatment as the other learner data screens. */
@@ -1307,8 +1428,14 @@ input[aria-invalid='true'] {
     grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .lesson-duration {
+  .lesson-actions {
     grid-column: 2;
+    justify-items: start;
+  }
+
+  .learner-progress-item {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
   }
 
   /* Stacks task controls so they remain readable and tap-friendly on phones. */

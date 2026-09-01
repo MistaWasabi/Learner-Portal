@@ -5,7 +5,20 @@ import {
   signOut,
   updateProfile,
 } from 'firebase/auth'
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  writeBatch,
+} from 'firebase/firestore'
 import { auth, authPersistenceReady, db } from './firebase'
 import './App.css'
 
@@ -20,6 +33,7 @@ const taskPriorities = ['low', 'medium', 'high']
 const portalScreens = [
   { id: 'home', label: 'Home' },
   { id: 'learning', label: 'Learning' },
+  { id: 'progress', label: 'Learner progress' },
   { id: 'tasks', label: 'Task manager' },
   { id: 'documents', label: 'Document library' },
 ]
@@ -157,6 +171,13 @@ function App() {
       // Firebase Auth stores the requested username on the new user's profile.
       if (isRegistration) {
         await updateProfile(userCredential.user, { displayName: username.trim() })
+      }
+
+      try {
+        // This lightweight record allows the progress screen to list learners without exposing email addresses.
+        await ensureLearnerProgressSummary(userCredential.user)
+      } catch {
+        // Progress reporting must not prevent a valid Firebase Authentication login if Firestore rules await publishing.
       }
 
       // The form copies are no longer needed after Firebase has authenticated the user.
@@ -369,6 +390,7 @@ function HomePage({ user, onSignOut }) {
 
           {activeScreen === 'home' && <HomeOverview user={user} onNavigate={setActiveScreen} />}
           {activeScreen === 'learning' && <LearningContent user={user} />}
+          {activeScreen === 'progress' && <LearnerProgress />}
           {activeScreen === 'tasks' && <TaskManager user={user} />}
           {activeScreen === 'documents' && <DocumentLibrary user={user} />}
         </section>
@@ -377,11 +399,57 @@ function HomePage({ user, onSignOut }) {
   )
 }
 
+/** Creates a stable Firestore document ID for a learner's completion of one known lesson. */
+function createLessonProgressId(courseId, lessonId) {
+  return `${courseId}--${lessonId}`
+}
+
+/** Keeps a public progress username short and avoids putting an email address in shared progress data. */
+function getLearnerDisplayName(user) {
+  return user.displayName?.trim().slice(0, 50) || 'Learner'
+}
+
+/** Calculates small, non-sensitive totals that the shared learner-progress screen can display. */
+function createLearnerProgressSummary(user, selectedCourseIds, completedLessonIds) {
+  const selectedCourses = courseCatalog.filter((course) => selectedCourseIds.includes(course.id))
+  const selectedLessonIds = selectedCourses.flatMap((course) => (
+    course.lessons.map((lesson) => createLessonProgressId(course.id, lesson.id))
+  ))
+  const completedLessonCount = selectedLessonIds.filter((lessonId) => completedLessonIds.includes(lessonId)).length
+
+  return {
+    displayName: getLearnerDisplayName(user),
+    selectedCourseCount: selectedCourses.length,
+    totalSelectedLessons: selectedLessonIds.length,
+    completedLessonCount,
+    updatedAt: serverTimestamp(),
+  }
+}
+
+/** Ensures every learner who signs in gets a small shared progress-summary record. */
+async function ensureLearnerProgressSummary(user) {
+  const progressReference = doc(db, 'learnerProgress', user.uid)
+  const progressSnapshot = await getDoc(progressReference)
+
+  if (!progressSnapshot.exists()) {
+    // New records start at zero because existing course and lesson data is stored separately.
+    await setDoc(progressReference, createLearnerProgressSummary(user, [], []))
+    return
+  }
+
+  // A merge refreshes the display name without overwriting the learner's existing progress totals.
+  await setDoc(progressReference, {
+    displayName: getLearnerDisplayName(user),
+    updatedAt: serverTimestamp(),
+  }, { merge: true })
+}
+
 /** Displays a compact, live overview while leaving detailed workflows on their own screens. */
 function HomeOverview({ user, onNavigate }) {
   // Stores only the small amount of learner-owned data required for the dashboard totals.
   const [tasks, setTasks] = useState([])
-  const [courseCount, setCourseCount] = useState(0)
+  const [selectedCourseIds, setSelectedCourseIds] = useState([])
+  const [lessonProgress, setLessonProgress] = useState([])
   const [documentCount, setDocumentCount] = useState(0)
   const [overviewError, setOverviewError] = useState('')
 
@@ -399,7 +467,12 @@ function HomeOverview({ user, onNavigate }) {
     )
     const courseUnsubscribe = onSnapshot(
       collection(db, 'users', user.uid, 'courseSelections'),
-      (snapshot) => setCourseCount(snapshot.size),
+      (snapshot) => setSelectedCourseIds(snapshot.docs.map((courseSnapshot) => courseSnapshot.data().courseId)),
+      () => setOverviewError('Your latest portal totals could not be loaded. Please try again.'),
+    )
+    const lessonProgressUnsubscribe = onSnapshot(
+      collection(db, 'users', user.uid, 'lessonProgress'),
+      (snapshot) => setLessonProgress(snapshot.docs.map((progressSnapshot) => progressSnapshot.data())),
       () => setOverviewError('Your latest portal totals could not be loaded. Please try again.'),
     )
 
@@ -408,6 +481,7 @@ function HomeOverview({ user, onNavigate }) {
       taskUnsubscribe()
       documentUnsubscribe()
       courseUnsubscribe()
+      lessonProgressUnsubscribe()
     }
   }, [user.uid])
 
@@ -416,9 +490,14 @@ function HomeOverview({ user, onNavigate }) {
   // Comparing ISO-style date strings makes the overdue total reliable without storing a browser-specific date object.
   const overdueTaskCount = tasks.filter((task) => !task.completed && task.dueDate && task.dueDate < getLocalDateKey()).length
   const completionRate = tasks.length ? Math.round((completedTaskCount / tasks.length) * 100) : 0
+  const selectedLessonIds = courseCatalog
+    .filter((course) => selectedCourseIds.includes(course.id))
+    .flatMap((course) => course.lessons.map((lesson) => createLessonProgressId(course.id, lesson.id)))
+  const completedLessonCount = lessonProgress.filter((progress) => selectedLessonIds.includes(createLessonProgressId(progress.courseId, progress.lessonId))).length
 
   const summaryItems = [
-    { label: 'Courses selected', value: courseCount },
+    { label: 'Courses selected', value: selectedCourseIds.length },
+    { label: 'Lessons complete', value: completedLessonCount },
     { label: 'Total tasks', value: tasks.length },
     { label: 'Completed', value: completedTaskCount },
     { label: 'Outstanding', value: outstandingTaskCount },
@@ -442,10 +521,18 @@ function HomeOverview({ user, onNavigate }) {
       <section className="overview-quick-access" aria-label="Portal sections">
         <article className="overview-card">
           <p className="overview-label">Learning</p>
-          <strong>{courseCount} selected course{courseCount === 1 ? '' : 's'}</strong>
+          <strong>{selectedCourseIds.length} selected course{selectedCourseIds.length === 1 ? '' : 's'}</strong>
           <p>Choose a course and explore its lessons at your own pace.</p>
           <button className="overview-button" type="button" onClick={() => onNavigate('learning')}>
             Open learning
+          </button>
+        </article>
+        <article className="overview-card">
+          <p className="overview-label">Learner progress</p>
+          <strong>{completedLessonCount} lesson{completedLessonCount === 1 ? '' : 's'} complete</strong>
+          <p>View course completion totals for every learner in the portal.</p>
+          <button className="overview-button" type="button" onClick={() => onNavigate('progress')}>
+            Open learner progress
           </button>
         </article>
         <article className="overview-card">
@@ -473,17 +560,21 @@ function HomeOverview({ user, onNavigate }) {
 function LearningContent({ user }) {
   // Firestore contains only this learner's selections; the shared lesson text remains read-only application content.
   const [selectedCourseIds, setSelectedCourseIds] = useState([])
+  const [completedLessonIds, setCompletedLessonIds] = useState([])
   const [activeCourseId, setActiveCourseId] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingCourseId, setIsSavingCourseId] = useState('')
+  const [isSavingLessonId, setIsSavingLessonId] = useState('')
   const [learningError, setLearningError] = useState('')
   const [learningSuccess, setLearningSuccess] = useState('')
 
   useEffect(() => {
     const selectionsReference = collection(db, 'users', user.uid, 'courseSelections')
 
-    // A live listener makes selections consistent between open portal tabs without saving data in the browser.
-    const unsubscribe = onSnapshot(
+    const lessonProgressReference = collection(db, 'users', user.uid, 'lessonProgress')
+
+    // Live listeners keep course selections and lesson completions consistent between open portal tabs.
+    const selectionsUnsubscribe = onSnapshot(
       selectionsReference,
       (snapshot) => {
         const validCourseIds = snapshot.docs
@@ -498,14 +589,28 @@ function LearningContent({ user }) {
         setIsLoading(false)
       },
     )
+    const lessonProgressUnsubscribe = onSnapshot(
+      lessonProgressReference,
+      (snapshot) => setCompletedLessonIds(snapshot.docs.map((progressSnapshot) => progressSnapshot.id)),
+      (error) => setLearningError(getLearningContentError(error, 'load')),
+    )
 
-    // Removes the real-time connection when this focused screen is no longer shown.
-    return unsubscribe
+    // Removes both real-time connections when this focused screen is no longer shown.
+    return () => {
+      selectionsUnsubscribe()
+      lessonProgressUnsubscribe()
+    }
   }, [user.uid])
 
   // Deriving the fallback avoids a second state update when a course selection changes in Firestore.
   const activeCourse = courseCatalog.find((course) => course.id === activeCourseId && selectedCourseIds.includes(course.id))
     ?? courseCatalog.find((course) => selectedCourseIds.includes(course.id))
+  const activeCompletedLessonCount = activeCourse
+    ? activeCourse.lessons.filter((lesson) => completedLessonIds.includes(createLessonProgressId(activeCourse.id, lesson.id))).length
+    : 0
+  const activeCourseProgress = activeCourse
+    ? Math.round((activeCompletedLessonCount / activeCourse.lessons.length) * 100)
+    : 0
 
   /** Adds one known course to the learner's private Firestore selection collection. */
   async function handleCourseSelect(course) {
@@ -514,11 +619,20 @@ function LearningContent({ user }) {
 
     try {
       setIsSavingCourseId(course.id)
+      const nextSelectedCourseIds = [...selectedCourseIds, course.id]
+      const batch = writeBatch(db)
+
       // A predictable document ID prevents duplicate selections for the same course.
-      await setDoc(doc(db, 'users', user.uid, 'courseSelections', course.id), {
+      batch.set(doc(db, 'users', user.uid, 'courseSelections', course.id), {
         courseId: course.id,
         enrolledAt: serverTimestamp(),
       })
+      // Keeping the selection and its learner-facing total together prevents the shared view from showing stale data.
+      batch.set(
+        doc(db, 'learnerProgress', user.uid),
+        createLearnerProgressSummary(user, nextSelectedCourseIds, completedLessonIds),
+      )
+      await batch.commit()
       setActiveCourseId(course.id)
       setLearningSuccess(`${course.title} was added to your learning.`)
     } catch (error) {
@@ -539,12 +653,60 @@ function LearningContent({ user }) {
 
     try {
       setIsSavingCourseId(course.id)
-      await deleteDoc(doc(db, 'users', user.uid, 'courseSelections', course.id))
+      const nextSelectedCourseIds = selectedCourseIds.filter((courseId) => courseId !== course.id)
+      const batch = writeBatch(db)
+      batch.delete(doc(db, 'users', user.uid, 'courseSelections', course.id))
+      // Previous completions remain private so a learner can resume them if they re-select the course later.
+      batch.set(
+        doc(db, 'learnerProgress', user.uid),
+        createLearnerProgressSummary(user, nextSelectedCourseIds, completedLessonIds),
+      )
+      await batch.commit()
       setLearningSuccess(`${course.title} was removed from your learning.`)
     } catch (error) {
       setLearningError(getLearningContentError(error, 'delete'))
     } finally {
       setIsSavingCourseId('')
+    }
+  }
+
+  /** Marks one selected lesson complete or incomplete and updates the shared total in the same batch. */
+  async function handleLessonCompletion(course, lesson) {
+    const lessonProgressId = createLessonProgressId(course.id, lesson.id)
+    const isCompleted = completedLessonIds.includes(lessonProgressId)
+    const nextCompletedLessonIds = isCompleted
+      ? completedLessonIds.filter((completedLessonId) => completedLessonId !== lessonProgressId)
+      : [...completedLessonIds, lessonProgressId]
+
+    setLearningError('')
+    setLearningSuccess('')
+
+    try {
+      setIsSavingLessonId(lessonProgressId)
+      const batch = writeBatch(db)
+      const lessonReference = doc(db, 'users', user.uid, 'lessonProgress', lessonProgressId)
+
+      if (isCompleted) {
+        // Deleting the record is simpler and safer than allowing lesson-completion updates.
+        batch.delete(lessonReference)
+      } else {
+        batch.set(lessonReference, {
+          courseId: course.id,
+          lessonId: lesson.id,
+          completedAt: serverTimestamp(),
+        })
+      }
+
+      batch.set(
+        doc(db, 'learnerProgress', user.uid),
+        createLearnerProgressSummary(user, selectedCourseIds, nextCompletedLessonIds),
+      )
+      await batch.commit()
+      setLearningSuccess(isCompleted ? `${lesson.title} marked incomplete.` : `${lesson.title} marked complete.`)
+    } catch (error) {
+      setLearningError(getLearningContentError(error, 'progress'))
+    } finally {
+      setIsSavingLessonId('')
     }
   }
 
@@ -614,6 +776,7 @@ function LearningContent({ user }) {
                 <p className="course-meta">{activeCourse.level} · {activeCourse.duration}</p>
                 <h3>{activeCourse.title}</h3>
                 <p>{activeCourse.description}</p>
+                <p className="course-progress-label">{activeCompletedLessonCount} of {activeCourse.lessons.length} lessons complete · {activeCourseProgress}%</p>
               </div>
               <button className="course-remove-button" type="button" onClick={() => handleCourseRemove(activeCourse)} disabled={isSavingCourseId === activeCourse.id}>
                 {isSavingCourseId === activeCourse.id ? 'Removing...' : 'Remove course'}
@@ -627,7 +790,20 @@ function LearningContent({ user }) {
                     <h4>{lesson.title}</h4>
                     <p>{lesson.summary}</p>
                   </div>
-                  <span className="lesson-duration">{lesson.duration}</span>
+                  <div className="lesson-actions">
+                    <span className="lesson-duration">{lesson.duration}</span>
+                    <button
+                      className={`lesson-completion-button ${completedLessonIds.includes(createLessonProgressId(activeCourse.id, lesson.id)) ? 'lesson-completion-button-complete' : ''}`}
+                      type="button"
+                      onClick={() => handleLessonCompletion(activeCourse, lesson)}
+                      disabled={isSavingLessonId === createLessonProgressId(activeCourse.id, lesson.id)}
+                      aria-pressed={completedLessonIds.includes(createLessonProgressId(activeCourse.id, lesson.id))}
+                    >
+                      {isSavingLessonId === createLessonProgressId(activeCourse.id, lesson.id)
+                        ? 'Saving...'
+                        : completedLessonIds.includes(createLessonProgressId(activeCourse.id, lesson.id)) ? 'Completed' : 'Mark complete'}
+                    </button>
+                  </div>
                 </li>
               ))}
             </ol>
@@ -635,6 +811,76 @@ function LearningContent({ user }) {
         )}
       </section>
     </div>
+  )
+}
+
+/** Shows the non-sensitive course-completion totals that every signed-in learner can currently view. */
+function LearnerProgress() {
+  // This collection intentionally contains only username and progress totals, never an email address or private lesson data.
+  const [learnerSummaries, setLearnerSummaries] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [progressError, setProgressError] = useState('')
+
+  useEffect(() => {
+    // A simple newest-first query needs only Firestore's automatic single-field updatedAt index.
+    const progressQuery = query(collection(db, 'learnerProgress'), orderBy('updatedAt', 'desc'))
+    const unsubscribe = onSnapshot(
+      progressQuery,
+      (snapshot) => {
+        setLearnerSummaries(snapshot.docs.map((learnerSnapshot) => ({
+          id: learnerSnapshot.id,
+          ...learnerSnapshot.data(),
+        })))
+        setProgressError('')
+        setIsLoading(false)
+      },
+      (error) => {
+        setProgressError(getLearnerProgressError(error))
+        setIsLoading(false)
+      },
+    )
+
+    // Closes the shared progress listener when the learner opens another portal screen.
+    return unsubscribe
+  }, [])
+
+  return (
+    <section className="dashboard-card learner-progress" aria-labelledby="learner-progress-heading">
+      <div className="learner-progress-heading">
+        <div>
+          <h2 id="learner-progress-heading">Learner progress</h2>
+          <p>Current course and lesson totals for signed-in learners. Permissions can be narrowed later with Custom Claims.</p>
+        </div>
+      </div>
+
+      {progressError && <p className="error progress-status" role="alert">{progressError}</p>}
+
+      <div className="learner-progress-list" aria-live="polite">
+        {isLoading && <p className="empty-learning-content">Loading learner progress...</p>}
+        {!isLoading && !progressError && learnerSummaries.length === 0 && (
+          <p className="empty-learning-content">No learner progress is available yet. Each learner appears after their next sign-in.</p>
+        )}
+        {learnerSummaries.map((summary) => {
+          const progressPercent = summary.totalSelectedLessons
+            ? Math.round((summary.completedLessonCount / summary.totalSelectedLessons) * 100)
+            : 0
+
+          return (
+            <article className="learner-progress-item" key={summary.id}>
+              <div>
+                <h3>{summary.displayName}</h3>
+                <p>{summary.selectedCourseCount} selected course{summary.selectedCourseCount === 1 ? '' : 's'} · {summary.completedLessonCount} of {summary.totalSelectedLessons} lessons complete</p>
+                <p className="progress-last-updated">Updated {formatProgressTimestamp(summary.updatedAt)}</p>
+              </div>
+              <div className="progress-meter" aria-label={`${summary.displayName} has completed ${progressPercent}% of selected lessons`}>
+                <span style={{ width: `${progressPercent}%` }} />
+              </div>
+              <strong>{progressPercent}%</strong>
+            </article>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -1110,7 +1356,16 @@ function getLearningContentError(error, action) {
   }
   if (action === 'load') return 'Your selected courses could not be loaded. Please try again.'
   if (action === 'delete') return 'Your course could not be removed. Please try again.'
+  if (action === 'progress') return 'Your lesson progress could not be saved. Please try again.'
   return 'Your course could not be added. Please try again.'
+}
+
+/** Returns learner-friendly feedback for the separate shared progress screen. */
+function getLearnerProgressError(error) {
+  if (error.code === 'permission-denied') {
+    return 'Firestore has blocked learner progress. Publish the latest Firestore rules and try again.'
+  }
+  return 'Learner progress could not be loaded. Please try again.'
 }
 
 /** Returns today's calendar date in the learner's local timezone for task due-date comparisons. */
@@ -1132,6 +1387,12 @@ function formatTaskDueDate(dueDate) {
 function formatUploadDate(timestamp) {
   if (!timestamp?.toDate) return 'Saving date...'
   return new Intl.DateTimeFormat('en-ZA', { dateStyle: 'medium' }).format(timestamp.toDate())
+}
+
+/** Formats the shared summary timestamp while handling an initial pending server timestamp. */
+function formatProgressTimestamp(timestamp) {
+  if (!timestamp?.toDate) return 'just now'
+  return new Intl.DateTimeFormat('en-ZA', { dateStyle: 'medium', timeStyle: 'short' }).format(timestamp.toDate())
 }
 
 /** Displays the eye icon used when the password is hidden. */
