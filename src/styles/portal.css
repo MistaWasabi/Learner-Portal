@@ -1,4 +1,10 @@
-/* Full-screen layout that centres the login card. */
+/* Compatibility styles retain the approved portal appearance while each feature receives scoped CSS. */
+.route-loading {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  color: var(--text-muted);
+}
 .login-page {
   min-height: 100svh;
   display: grid;
@@ -71,6 +77,8 @@
 
 /* Gives each screen a clear, keyboard-accessible sidebar navigation control. */
 .sidebar-nav-button {
+  /* NavLink renders an anchor, so this prevents browser-default link underlines after the router refactor. */
+  display: block;
   padding: var(--space-2);
   border: 1px solid transparent;
   border-radius: 8px;
@@ -79,6 +87,7 @@
   font: inherit;
   font-weight: 650;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
 }
 

@@ -6,6 +6,8 @@ import { createRoot } from 'react-dom/client'
 
 // Global CSS variables and browser-wide reset styles.
 import './index.css'
+// Compatibility stylesheet for the established portal design while feature CSS files are progressively filled.
+import './styles/portal.css'
 
 // Root user-interface component for the Learner Portal.
 import App from './App.jsx'
