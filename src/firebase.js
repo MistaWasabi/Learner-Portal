@@ -1,8 +1,8 @@
 // Firebase app bootstrap utilities.
 import { initializeApp } from 'firebase/app'
 
-// Firebase Authentication service and memory-only session support.
-import { getAuth, inMemoryPersistence, setPersistence } from 'firebase/auth'
+// Firebase Authentication service and browser-session persistence support.
+import { browserSessionPersistence, getAuth, setPersistence } from 'firebase/auth'
 
 // Firestore stores the portal's non-relational document-link records.
 import { getFirestore } from 'firebase/firestore'
@@ -26,6 +26,9 @@ export const auth = getAuth(app)
 // Exposes the non-relational Firestore database for document metadata records.
 export const db = getFirestore(app)
 
-// Uses Firebase's NONE persistence: authentication stays only in live memory,
-// so this app does not create a persistent Firebase browser session or cookie.
-export const authPersistenceReady = setPersistence(auth, inMemoryPersistence)
+// Keeps Firebase's signed-in session for this browser session only. This allows a
+// page refresh to restore the user, but Firebase clears the session when the
+// browser session ends. Firebase keeps an authentication credential here; it
+// never stores the learner's password, and this app does not write credentials
+// or profile details to cookies, localStorage, or sessionStorage itself.
+export const authPersistenceReady = setPersistence(auth, browserSessionPersistence)

@@ -53,9 +53,9 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - Add clear comments around meaningful code blocks, functions, state, rules, and styles. Comments should explain both **what** the code does and **why** that approach is appropriate, especially for Firebase, security, and data decisions.
 - Use Firebase Authentication for user registration and sign-in.
 - Store a registered learner's username in their Firebase Auth `displayName` and show it in the sidebar.
-- Keep authentication memory-only so refreshing returns the user to Login.
-- Clear the password field after an authentication attempt. Do not use cookies, local storage, or source code for passwords or sensitive session data.
-- When a cookie preference is later added for the assessment, limit it to a harmless setting such as theme. It must never change the memory-only authentication rule.
+- Use Firebase's browser-session persistence so a learner stays signed in after refreshing a page, but is signed out when the browser session ends. Firebase manages the session credential required for this; the app must not write credentials or profile data to browser storage itself.
+- Clear the password field after an authentication attempt. Do not use cookies, local storage, session storage, or source code for passwords. Firebase Authentication owns password handling and its managed session credential.
+- When a cookie preference is later added for the assessment, limit it to a harmless setting such as theme. It must never store a password or replace Firebase's managed session rule.
 
 ## Week 1 Demo Feedback and Agreed Technical Direction
 

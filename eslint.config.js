@@ -18,4 +18,11 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // Cloud Functions runs in Node.js, so CommonJS globals are valid there but not in the React browser app.
+    files: ['functions/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

@@ -83,7 +83,8 @@ export function AuthPage({ onAuthenticated }) {
 
     try {
       setIsSigningIn(true)
-      // Applies memory-only persistence before beginning the Firebase sign-in.
+      // Waits for session-only persistence before Firebase creates the sign-in session.
+      // This retains an authentication credential until the browser session ends, never the password.
       await authPersistenceReady
       const userCredential = isRegistration
         ? await createUserWithEmailAndPassword(auth, email.trim(), password)
@@ -104,8 +105,8 @@ export function AuthPage({ onAuthenticated }) {
       // The form copies are no longer needed after Firebase has authenticated the user.
       setUsername('')
       setEmail('')
-      // The route shell owns the session for this browser tab; navigating replaces the auth route.
-      onAuthenticated(userCredential.user)
+      // The route shell reads the trusted ID-token role before navigating to protected portal routes.
+      await onAuthenticated(userCredential.user)
       navigate('/home', { replace: true })
     } catch (error) {
       setAuthError(getAuthError(error))

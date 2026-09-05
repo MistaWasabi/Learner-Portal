@@ -1,1 +1,17 @@
 /* PortalLayout owns the persistent sidebar. Its existing rules currently remain in styles/portal.css to avoid a visual regression during the CSS migration. */
+
+/* Separates the learner's trusted Custom Claim from their username without competing with navigation links. */
+.sidebar-role {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+/* Keeps the role readable in the compact, always-visible mobile sidebar. */
+@media (max-width: 640px) {
+  .sidebar-role {
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+}

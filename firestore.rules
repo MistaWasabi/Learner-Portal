@@ -35,6 +35,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Roles come only from trusted Firebase Admin SDK Custom Claims, never from Firestore or React.
+    function isProgressStaff() {
+      return isAuthenticated() &&
+        (request.auth.token.role == 'admin' || request.auth.token.role == 'teacher');
+    }
+
     // Included for future records that store a user ID; the current schemas use the path as ownership.
     function uidUnchanged() {
       return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
@@ -216,8 +222,8 @@ service cloud.firestore {
     }
 
     match /learnerProgress/{userId} {
-      // The user explicitly requested this limited progress view for every signed-in learner.
-      allow read: if isAuthenticated();
+      // Only trusted staff claims may read every learner's shared progress summary.
+      allow read: if isProgressStaff();
 
       // Only the owner can create or refresh their own public summary, and every write validates the whole schema.
       allow create: if isOwner(userId) && isValidLearnerProgress();
