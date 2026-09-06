@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { canViewLearnerProgress, getRoleLabel } from '../auth/auth.logic'
+import { canViewLearnerProgress, getRoleLabel, isAdmin } from '../auth/auth.logic'
 import './PortalLayout.css'
 
 // One navigation definition keeps sidebar links and the displayed heading consistent.
@@ -8,6 +8,7 @@ const portalNavigation = [
   { path: '/home', label: 'Home' },
   { path: '/learning', label: 'Learning' },
   { path: '/progress', label: 'Learner progress', requiresProgressAccess: true },
+  { path: '/admin', label: 'Admin database', requiresAdminAccess: true },
   { path: '/tasks', label: 'Task manager' },
   { path: '/documents', label: 'Document library' },
 ]
@@ -48,7 +49,10 @@ export function PortalLayout({ user, role, onSignOut }) {
             <p className="sidebar-role">{roleLabel}</p>
             <nav className="sidebar-navigation" aria-label="Portal navigation">
               {portalNavigation
-                .filter((item) => !item.requiresProgressAccess || canViewLearnerProgress(role))
+                .filter((item) => (
+                  (!item.requiresProgressAccess || canViewLearnerProgress(role)) &&
+                  (!item.requiresAdminAccess || isAdmin(role))
+                ))
                 .map((item) => (
                 <NavLink
                   className={({ isActive }) => `sidebar-nav-button ${isActive ? 'sidebar-nav-active' : ''}`}

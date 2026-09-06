@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { collection, onSnapshot } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { courseCatalog, createLessonProgressId, getLocalDateKey } from '../shared/portal.logic'
+import { getOwnTasks, getTaskManagerError } from '../tasks/taskManager.logic'
 import './HomeOverview.css'
 
 export function HomeOverview({ user }) {
@@ -16,12 +17,20 @@ export function HomeOverview({ user }) {
   const [overviewError, setOverviewError] = useState('')
 
   useEffect(() => {
+    let isCurrentUser = true
+
+    // Tasks now come from Realtime Database through the assessment-required REST GET,
+    // while documents, courses, and lesson progress remain in their existing Firestore collections.
+    // The flag prevents a late REST response from a previous account replacing the next learner's totals.
+    getOwnTasks(user)
+      .then(({ tasks: loadedTasks }) => {
+        if (isCurrentUser) setTasks(loadedTasks)
+      })
+      .catch((error) => {
+        if (isCurrentUser) setOverviewError(getTaskManagerError(error, 'load'))
+      })
+
     // These paths match the owner-only Firestore rules, so the overview never reads another learner's data.
-    const taskUnsubscribe = onSnapshot(
-      collection(db, 'users', user.uid, 'tasks'),
-      (snapshot) => setTasks(snapshot.docs.map((taskSnapshot) => taskSnapshot.data())),
-      () => setOverviewError('Your latest portal totals could not be loaded. Please try again.'),
-    )
     const documentUnsubscribe = onSnapshot(
       collection(db, 'users', user.uid, 'documents'),
       (snapshot) => setDocumentCount(snapshot.size),
@@ -40,12 +49,12 @@ export function HomeOverview({ user }) {
 
     // Stops all real-time listeners when the learner leaves Home or signs out.
     return () => {
-      taskUnsubscribe()
+      isCurrentUser = false
       documentUnsubscribe()
       courseUnsubscribe()
       lessonProgressUnsubscribe()
     }
-  }, [user.uid])
+  }, [user])
 
   const completedTaskCount = tasks.filter((task) => task.completed).length
   const outstandingTaskCount = tasks.length - completedTaskCount
@@ -71,7 +80,7 @@ export function HomeOverview({ user }) {
       {overviewError && <p className="error overview-status" role="alert">{overviewError}</p>}
 
       <section className="summary-grid" aria-label="Task summary">
-        {/* The Home screen summarises real Firestore task data instead of duplicating the full task workflow. */}
+        {/* The Home screen calculates live totals from the same REST-loaded task records as Task Manager. */}
         {summaryItems.map((item) => (
           <article className="summary-card" key={item.label}>
             <p>{item.label}</p>
@@ -117,4 +126,3 @@ export function HomeOverview({ user }) {
     </div>
   )
 }
-

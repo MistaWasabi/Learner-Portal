@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react'
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore'
-import { db } from '../../firebase'
-import { createEmptyTask, formatTaskDueDate, getTaskManagerError, taskCategories, taskPriorities } from '../shared/portal.logic'
+import { createEmptyTask, formatTaskDueDate } from '../shared/portal.logic'
+import {
+  createTask,
+  deleteTask,
+  downloadRestEvidence,
+  formatRestRequestTime,
+  getOwnTasks,
+  getTaskManagerError,
+  updateTask,
+  updateTaskCompletion,
+  validateTask,
+} from './taskManager.logic'
 import './TaskManager.css'
 
 export function TaskManager({ user }) {
-  // Holds the real-time Firestore records and the form state used to create or edit a task.
+  // Holds the learner's own REST-loaded task records and the shared create/edit form state.
   const [tasks, setTasks] = useState([])
   const [taskForm, setTaskForm] = useState(createEmptyTask)
   const [editingTaskId, setEditingTaskId] = useState('')
@@ -15,86 +24,84 @@ export function TaskManager({ user }) {
   const [deletingTaskId, setDeletingTaskId] = useState('')
   const [taskError, setTaskError] = useState('')
   const [taskSuccess, setTaskSuccess] = useState('')
+  // Keeps a short, sanitised REST history that can be used as assessment evidence without exposing ID tokens.
+  const [restRequestLog, setRestRequestLog] = useState([])
 
-  // Each learner listens only to their own tasks, with the newest task shown first.
+  /** Adds safe method/path/status metadata to the visible and console REST evidence log. */
+  function recordRestRequests(...requests) {
+    const newRequests = requests.filter(Boolean)
+    if (!newRequests.length) return
+
+    setRestRequestLog((current) => [...newRequests, ...current].slice(0, 12))
+  }
+
+  /** Performs the required final verification GET and synchronises the interface with the saved database data. */
+  async function reloadTasks() {
+    const { tasks: loadedTasks, request } = await getOwnTasks(user)
+    setTasks(loadedTasks)
+    recordRestRequests(request)
+  }
+
   useEffect(() => {
-    const taskCollection = collection(db, 'users', user.uid, 'tasks')
-    const taskQuery = query(taskCollection, orderBy('createdAt', 'desc'))
+    let isCurrentUser = true
 
-    const unsubscribe = onSnapshot(
-      taskQuery,
-      (snapshot) => {
-        setTasks(snapshot.docs.map((taskSnapshot) => ({
-          id: taskSnapshot.id,
-          ...taskSnapshot.data(),
-        })))
+    // The state updates happen after the REST promise resolves, rather than directly
+    // inside the effect, so React avoids an unnecessary synchronous render cascade.
+    getOwnTasks(user)
+      .then(({ tasks: loadedTasks, request }) => {
+        if (!isCurrentUser) return
+        setTasks(loadedTasks)
+        setRestRequestLog((current) => [request, ...current].slice(0, 12))
         setTaskError('')
-        setIsLoading(false)
-      },
-      (error) => {
-        setTaskError(getTaskManagerError(error, 'load'))
-        setIsLoading(false)
-      },
-    )
+      })
+      .catch((error) => {
+        if (isCurrentUser) setTaskError(getTaskManagerError(error, 'load'))
+      })
+      .finally(() => {
+        if (isCurrentUser) setIsLoading(false)
+      })
 
-    // Ends the listener when the learner signs out, preventing unnecessary reads.
-    return unsubscribe
-  }, [user.uid])
+    // Prevents an in-flight REST response for a previous login changing the next learner's screen.
+    return () => {
+      isCurrentUser = false
+    }
+  }, [user])
 
-  // Uses Array.filter to provide a clear client-side view of all, active, or completed tasks.
+  // Array.filter keeps the interface fast while the protected database remains the single source of task records.
   const visibleTasks = tasks.filter((task) => {
     if (taskFilter === 'active') return !task.completed
     if (taskFilter === 'completed') return task.completed
     return true
   })
 
-  /** Updates one form value without mutating the previous React state object. */
+  /** Updates one form field without mutating the previous React state object. */
   function handleTaskFieldChange(event) {
     const { name, value } = event.target
     setTaskForm((current) => ({ ...current, [name]: value }))
   }
 
-  /** Validates the fields before Firestore receives the new or changed task. */
-  function validateTask() {
-    if (!taskForm.title.trim()) return 'Task title is required.'
-    if (taskForm.title.trim().length > 120) return 'Task title must be 120 characters or fewer.'
-    if (!taskForm.dueDate) return 'Choose a due date.'
-    if (!taskCategories.includes(taskForm.category)) return 'Choose a valid task category.'
-    if (!taskPriorities.includes(taskForm.priority)) return 'Choose a valid priority.'
-    return ''
-  }
-
-  /** Creates a task or saves edits while keeping the immutable creation date unchanged. */
+  /** Sends either a REST POST or PATCH, then immediately verifies the result with REST GET. */
   async function handleTaskSubmit(event) {
     event.preventDefault()
 
-    const validationMessage = validateTask()
+    const validationMessage = validateTask(taskForm)
     setTaskError(validationMessage)
     setTaskSuccess('')
     if (validationMessage) return
-
-    const taskData = {
-      title: taskForm.title.trim(),
-      category: taskForm.category,
-      dueDate: taskForm.dueDate,
-      priority: taskForm.priority,
-      completed: taskForm.completed,
-    }
 
     try {
       setIsSaving(true)
 
       if (editingTaskId) {
-        // updateDoc changes only the editable fields; the rules keep createdAt immutable.
-        await updateDoc(doc(db, 'users', user.uid, 'tasks', editingTaskId), taskData)
-        setTaskSuccess('Task updated.')
+        const { request } = await updateTask(user, editingTaskId, taskForm)
+        recordRestRequests(request)
+        await reloadTasks()
+        setTaskSuccess('Task updated and verified with a GET request.')
       } else {
-        // addDoc creates a Firestore document with an automatic ID for this learner's task.
-        await addDoc(collection(db, 'users', user.uid, 'tasks'), {
-          ...taskData,
-          createdAt: serverTimestamp(),
-        })
-        setTaskSuccess('Task added.')
+        const { request } = await createTask(user, taskForm)
+        recordRestRequests(request)
+        await reloadTasks()
+        setTaskSuccess('Task added and verified with a GET request.')
       }
 
       setTaskForm(createEmptyTask())
@@ -120,7 +127,7 @@ export function TaskManager({ user }) {
     setTaskSuccess('Editing task. Save changes when you are ready.')
   }
 
-  /** Stops editing and restores a blank task form without changing Firestore data. */
+  /** Stops editing and restores a blank task form without changing database data. */
   function cancelTaskEdit() {
     setTaskForm(createEmptyTask())
     setEditingTaskId('')
@@ -128,21 +135,22 @@ export function TaskManager({ user }) {
     setTaskSuccess('')
   }
 
-  /** Changes only the completed flag for a task, preserving all other task details. */
+  /** Uses REST PATCH to change only the completion state, followed by a verification GET. */
   async function handleTaskCompletion(task) {
     setTaskError('')
     setTaskSuccess('')
 
     try {
-      await updateDoc(doc(db, 'users', user.uid, 'tasks', task.id), {
-        completed: !task.completed,
-      })
+      const { request } = await updateTaskCompletion(user, task)
+      recordRestRequests(request)
+      await reloadTasks()
+      setTaskSuccess('Task completion updated and verified with a GET request.')
     } catch (error) {
       setTaskError(getTaskManagerError(error, 'save'))
     }
   }
 
-  /** Confirms and deletes a task only from the current learner's Firestore path. */
+  /** Confirms and sends REST DELETE only for a task inside the signed-in learner's own database path. */
   async function handleTaskDelete(task) {
     const shouldDelete = window.confirm(`Delete “${task.title}”? This cannot be undone.`)
 
@@ -153,9 +161,11 @@ export function TaskManager({ user }) {
 
     try {
       setDeletingTaskId(task.id)
-      await deleteDoc(doc(db, 'users', user.uid, 'tasks', task.id))
+      const { request } = await deleteTask(user, task.id)
+      recordRestRequests(request)
+      await reloadTasks()
       if (editingTaskId === task.id) cancelTaskEdit()
-      setTaskSuccess('Task deleted.')
+      setTaskSuccess('Task deleted and verified with a GET request.')
     } catch (error) {
       setTaskError(getTaskManagerError(error, 'delete'))
     } finally {
@@ -168,7 +178,7 @@ export function TaskManager({ user }) {
       <div className="task-manager-heading">
         <div>
           <h2 id="tasks-heading">Task manager</h2>
-          <p>Add, complete, edit, or remove tasks from your learning plan.</p>
+          <p>Add, complete, edit, or remove only your own tasks through Realtime Database REST requests.</p>
         </div>
         <label className="task-filter-control" htmlFor="task-filter">
           Show
@@ -196,7 +206,10 @@ export function TaskManager({ user }) {
         <div className="task-field">
           <label htmlFor="task-category">Category</label>
           <select id="task-category" name="category" value={taskForm.category} onChange={handleTaskFieldChange}>
-            {taskCategories.map((category) => <option key={category}>{category}</option>)}
+            <option>General</option>
+            <option>JavaScript</option>
+            <option>Project</option>
+            <option>Support</option>
           </select>
         </div>
         <div className="task-field">
@@ -206,7 +219,9 @@ export function TaskManager({ user }) {
         <div className="task-field">
           <label htmlFor="task-priority">Priority</label>
           <select id="task-priority" name="priority" value={taskForm.priority} onChange={handleTaskFieldChange}>
-            {taskPriorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+            <option value="low">low</option>
+            <option value="medium">medium</option>
+            <option value="high">high</option>
           </select>
         </div>
         <div className="task-form-actions">
@@ -263,7 +278,37 @@ export function TaskManager({ user }) {
           </article>
         ))}
       </div>
+
+      <section className="task-rest-evidence" aria-labelledby="rest-evidence-heading">
+        <div className="task-rest-evidence-heading">
+          <div>
+          <h3 id="rest-evidence-heading">REST request evidence</h3>
+          <p>Safe method, path, and status logs. Firebase ID tokens and task text are deliberately excluded.</p>
+          </div>
+          <button
+            className="task-rest-download"
+            type="button"
+            onClick={() => downloadRestEvidence(restRequestLog)}
+            disabled={restRequestLog.length === 0}
+          >
+            Download log
+          </button>
+        </div>
+        {restRequestLog.length === 0 ? (
+          <p className="task-rest-empty">Your REST requests will appear here after the database is configured.</p>
+        ) : (
+          <ul className="task-rest-log">
+            {restRequestLog.map((request, index) => (
+              <li key={`${request.recordedAt}-${request.method}-${index}`}>
+                <strong className={`task-rest-method task-rest-method-${request.method.toLowerCase()}`}>{request.method}</strong>
+                <span>{request.path}</span>
+                <span>{request.status}</span>
+                <time dateTime={request.recordedAt}>{formatRestRequestTime(request.recordedAt)}</time>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </section>
   )
 }
-

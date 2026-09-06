@@ -1,2 +1,91 @@
-/* Feature-specific styles will be added here as the compatibility stylesheet is migrated without altering the approved portal design. */
+/* REST evidence belongs to Task Manager because it documents this feature's assessment-required network workflow. */
+.task-rest-evidence {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
 
+.task-rest-evidence h3,
+.task-rest-evidence p {
+  margin-top: 0;
+}
+
+.task-rest-evidence-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.task-rest-download {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--accent);
+  background: white;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.task-rest-download:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.task-rest-evidence p {
+  color: var(--text-muted);
+}
+
+.task-rest-log {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-rest-log li {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) 44px auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.task-rest-method {
+  color: var(--accent);
+}
+
+.task-rest-method-delete {
+  color: #bd3348;
+}
+
+.task-rest-log time {
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .task-rest-evidence-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .task-rest-download {
+    width: 100%;
+  }
+
+  .task-rest-log li {
+    grid-template-columns: 60px minmax(0, 1fr) 32px;
+  }
+
+  .task-rest-log time {
+    grid-column: 2 / -1;
+    text-align: left;
+  }
+}

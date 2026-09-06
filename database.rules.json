@@ -1,0 +1,41 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "tasks": {
+      ".read": "auth != null && auth.token.role === 'admin'",
+      "$userId": {
+        ".read": "auth != null && auth.uid === $userId",
+        ".indexOn": ["createdAt"],
+        "$taskId": {
+          ".write": "auth != null && auth.uid === $userId && ((!data.exists() && newData.exists() && newData.child('createdAt').val() === now && newData.child('updatedAt').val() === now) || (data.exists() && newData.exists() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('updatedAt').val() === now) || (data.exists() && !newData.exists()))",
+          ".validate": "newData.hasChildren(['title', 'category', 'dueDate', 'priority', 'completed', 'createdAt', 'updatedAt'])",
+          "title": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
+          },
+          "category": {
+            ".validate": "newData.val() === 'General' || newData.val() === 'JavaScript' || newData.val() === 'Project' || newData.val() === 'Support'"
+          },
+          "dueDate": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+          },
+          "priority": {
+            ".validate": "newData.val() === 'low' || newData.val() === 'medium' || newData.val() === 'high'"
+          },
+          "completed": {
+            ".validate": "newData.isBoolean()"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    }
+  }
+}

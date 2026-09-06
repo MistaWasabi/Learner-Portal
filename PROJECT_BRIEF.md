@@ -36,8 +36,8 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 
 - [ ] Completed, usable Learner Support Portal matching the approved brief.
 - [x] Firebase Authentication with registration, sign-in, sign-out, and session-gated content.
-- [ ] Firebase Realtime Database with structured records and secure rules.
-- [ ] REST CRUD for one main entity (recommended: learner tasks), with request evidence and final read-back.
+- [x] Firebase Realtime Database with structured, owner-based task records and published security rules.
+- [x] REST CRUD for learner tasks (`POST`, `GET`, `PATCH`, `DELETE`), with an in-app safe request log and final verification GET after each mutation. Complete the screenshot fields in `REST_CRUD_EVIDENCE.md` during the live demonstration.
 - [ ] ES6 classes, object instances, and an inheritance or composition relationship.
 - [ ] Validation for names, email, passwords, numeric fields, and required data.
 - [ ] Error handling with `try`, `catch`, `finally`, and at least one deliberately thrown custom error.
@@ -106,20 +106,29 @@ This section records the Week 1 feedback so it guides future changes rather than
 - A record contains a title, an external HTTPS document link, and a creation date. Firebase does not store the document file itself.
 - `firestore.rules` is a prototype owner-only rule set that must be reviewed and published in the Firebase Console before document links will work.
 
-## Current Firestore Task Manager
+## Current Realtime Database Task Manager
 
-- The Home page includes a private Task Manager at `users/{uid}/tasks/{taskId}`.
-- Learners can add, read, edit, complete, filter, and delete only their own tasks.
-- The Firestore version demonstrates non-relational, user-owned CRUD. The separate assessment requirement for Realtime Database REST CRUD remains outstanding.
+- Tasks are stored at `/tasks/{uid}/{taskId}` in Realtime Database, rather than in Firestore.
+- The Task Manager uses authenticated Firebase REST requests for `POST`, `GET`, `PATCH`, and `DELETE`; every write is followed by a final `GET` verification.
+- Learners can add, read, edit, complete, filter, and delete only their own tasks. An Admin can read all task paths through the protected Admin Database screen, but cannot modify another learner's record.
+- The Home-page task totals read from the same Realtime Database REST path so the dashboard and Task Manager agree.
+- The original Firestore task rule remains owner-only, but the interface no longer uses that old task collection. Do not delete legacy Firestore records until you have reviewed whether they are needed.
+
+## Current Administrator Directory
+
+- `/admin` is an Admin-only route protected in React and again in Firebase.
+- `listPortalUsers` is a callable Cloud Function that uses the Firebase Admin SDK to retrieve every Firebase Authentication user in pages.
+- It returns only the required directory fields: UID, username, email address, Custom Claim role, and disabled/active state. This data is never copied into Firestore or Realtime Database.
+- The Realtime Database rules grant an Admin read-only access to all task paths. The Cloud Function separately verifies the Admin claim before returning email addresses.
 
 ## Suggested Build Order
 
-1. Create the Realtime Database structure and identity-based security rules.
-2. Build the task entity and complete its Firebase REST CRUD workflow.
-3. Replace temporary dashboard values with calculated task data.
-4. Add search/filter/sort, task-delete confirmation, and printable progress summary.
-5. Add the support-booking flow, then the preference, animation/multimedia, and game.
-6. Capture testing, REST, GitHub collaboration, debugging, and refactoring evidence as development proceeds.
+1. Capture the live REST CRUD screenshots and downloaded safe logs using `REST_CRUD_EVIDENCE.md`.
+2. Add a printable progress summary and a safe non-sensitive preference cookie.
+3. Build the validated support-booking flow, then role-based booking visibility for assessors.
+4. Add verified-email handling and plan/test Firebase multi-factor authentication with a disposable development inbox.
+5. Add the assessment-approved animation/multimedia feature and playable JavaScript mini-game with a recorded outcome.
+6. Capture GitHub collaboration, debugging/refactoring, testing, and reflection evidence as development proceeds.
 
 ## Assessment Reminder
 

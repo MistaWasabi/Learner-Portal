@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth, authPersistenceReady } from './firebase'
 import { PortalLayout } from './features/portal/PortalLayout'
-import { canViewLearnerProgress, getUserRole } from './features/auth/auth.logic'
+import { canViewLearnerProgress, getUserRole, isAdmin } from './features/auth/auth.logic'
 
 // Each screen is fetched only when its route is visited, keeping Login lightweight for first-time learners.
 const AuthPage = lazy(() => import('./features/auth/AuthPage').then((module) => ({ default: module.AuthPage })))
@@ -12,6 +12,7 @@ const LearningContent = lazy(() => import('./features/learning/LearningContent')
 const LearnerProgress = lazy(() => import('./features/progress/LearnerProgress').then((module) => ({ default: module.LearnerProgress })))
 const TaskManager = lazy(() => import('./features/tasks/TaskManager').then((module) => ({ default: module.TaskManager })))
 const DocumentLibrary = lazy(() => import('./features/documents/DocumentLibrary').then((module) => ({ default: module.DocumentLibrary })))
+const AdminDatabase = lazy(() => import('./features/admin/AdminDatabase').then((module) => ({ default: module.AdminDatabase })))
 
 /**
  * Blocks portal routes until Firebase has restored a signed-in user for this
@@ -29,6 +30,11 @@ function ProtectedPortal({ isAuthLoading, session }) {
 /** Blocks the progress route even when a student manually enters its URL. */
 function ProtectedLearnerProgress({ role }) {
   return canViewLearnerProgress(role) ? <Outlet /> : <Navigate to="/home" replace />
+}
+
+/** Blocks the user directory and all-user task data unless the Firebase Custom Claim is Admin. */
+function ProtectedAdmin({ role }) {
+  return isAdmin(role) ? <Outlet /> : <Navigate to="/home" replace />
 }
 
 /**
@@ -153,6 +159,9 @@ function App() {
             <Route path="/learning" element={<LearningContent user={session?.user} />} />
             <Route element={<ProtectedLearnerProgress role={session?.role} />}>
               <Route path="/progress" element={<LearnerProgress />} />
+            </Route>
+            <Route element={<ProtectedAdmin role={session?.role} />}>
+              <Route path="/admin" element={<AdminDatabase user={session?.user} />} />
             </Route>
             <Route path="/tasks" element={<TaskManager user={session?.user} />} />
             <Route path="/documents" element={<DocumentLibrary user={session?.user} />} />

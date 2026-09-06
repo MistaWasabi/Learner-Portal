@@ -21,6 +21,11 @@ export function canViewLearnerProgress(role) {
   return role === 'admin' || role === 'teacher'
 }
 
+/** Returns whether a Custom Claim permits access to administrator-only data, including learner emails. */
+export function isAdmin(role) {
+  return role === 'admin'
+}
+
 /** Returns a safe, readable role label for the sidebar without trusting unknown values. */
 export function getRoleLabel(role) {
   return roleLabels[role] ?? roleLabels.student

@@ -1,0 +1,103 @@
+/* Admin-only tables use a dedicated prefix so future admin screens cannot change learner-facing styles. */
+.admin-database {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.admin-section-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.admin-section-heading h2,
+.admin-section-heading p {
+  margin-top: 0;
+}
+
+.admin-refresh-button {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  background: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-refresh-button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.admin-status,
+.admin-rest-status {
+  margin: var(--space-3) 0 0;
+}
+
+.admin-rest-status {
+  color: var(--text-muted);
+}
+
+.admin-table-wrap {
+  margin-top: var(--space-4);
+  overflow-x: auto;
+}
+
+.admin-user-table,
+.admin-task-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-user-table th,
+.admin-user-table td,
+.admin-task-table th,
+.admin-task-table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-user-table th,
+.admin-task-table th {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.admin-role-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.admin-role-teacher {
+  background: #e5f8ef;
+  color: #19734b;
+}
+
+.admin-role-student {
+  background: #eef2f7;
+  color: #526277;
+}
+
+@media (max-width: 640px) {
+  .admin-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-refresh-button {
+    width: 100%;
+  }
+}

@@ -13,15 +13,18 @@ Firebase Setup
 2. Add the Firebase Web App settings from Firebase Console into `.env.local`
 3. In Firebase Console, enable Authentication → Email/Password
 4. In Firestore Database → Rules, copy in `firestore.rules` from this project and Publish
+5. Create or select the Realtime Database instance, then add its exact URL as `VITE_FIREBASE_DATABASE_URL` in `.env.local` and restart Vite.
+6. Publish the Realtime Database rules and the Admin directory Function: `npx -y firebase-tools@latest deploy --only database,functions --project learner-portal-b7224`
 
 
 What the App has Currently
 - Login and Registration through Firebase Authentication
 - Home Screen with a persistent side bar
-- Task Manager
+- Task Manager using Realtime Database REST CRUD (`POST`, `GET`, `PATCH`, and `DELETE`)
 - Document Library using Firestore links
 - Learning Courses and Lesson Completion
 - Learner Progress Screen
+- Admin Database page showing all Firebase Authentication users, roles, email addresses, and read-only task records
 
 
 Important
@@ -30,6 +33,10 @@ Important
 - Passwords are never stored in Firestore, cookies, local storage, session storage, or source code
 - Firebase manages the session-only authentication credential needed to restore a login; the app does not write credentials or profile data to browser storage
 - Learner Progress can be seen only by users with a Firebase Custom Claim of `admin` or `teacher`
+- The Admin Database page and user directory can be seen only by an `admin` Custom Claim
+- Task records are stored at `/tasks/{uid}/{taskId}` in Realtime Database. Learners can manage their own records; an Admin can read every task but cannot edit another learner's task.
+- The Task Manager's **Download log** button exports credential-free REST request evidence. Use `REST_CRUD_EVIDENCE.md` to record screenshots and verification results.
+- `REALTIME_DATABASE_SECURITY_REVIEW.md` explains the data structure, published rules, permission boundary, and future hardening work.
 
 
 Custom Roles
