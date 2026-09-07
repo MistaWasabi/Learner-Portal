@@ -5,14 +5,6 @@
   place-items: center;
   color: var(--text-muted);
 }
-.login-page {
-  min-height: 100svh;
-  display: grid;
-  place-items: center;
-  padding: var(--page-gutter);
-}
-
-
 .home-page {
   min-height: 100svh;
   padding: var(--page-gutter);
@@ -47,7 +39,7 @@
   overflow-y: auto;
 }
 
-/* Removes the login-page spacing from the compact sidebar brand mark. */
+/* Removes the surrounding brand spacing from the compact sidebar mark. */
 .sidebar-brand {
   margin-bottom: var(--space-6);
 }
@@ -809,7 +801,7 @@
   text-align: left;
 }
 
-/* Provides a consistent bordered container for live Firestore task records. */
+/* Provides a consistent bordered container for live Realtime Database task records. */
 .task-list {
   overflow: hidden;
   border: 1px solid var(--border);
@@ -1063,38 +1055,6 @@
 }
 
 
-.login-card {
-  width: min(100%, 420px);
-  padding: var(--space-6);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  background: var(--card-bg);
-  box-shadow: var(--card-shadow);
-}
-
-.brand-mark {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  margin-bottom: var(--space-4);
-  border-radius: 12px;
-  color: #fff;
-  background: var(--accent);
-  font-weight: 700;
-  letter-spacing: -0.6px;
-}
-
-/* Uppercase product label above the main heading. */
-.eyebrow {
-  margin: 0 0 8px;
-  color: var(--accent);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 /* Shared style for the primary page heading. */
 h1 {
   margin: 0;
@@ -1102,25 +1062,6 @@ h1 {
   font-size: 32px;
   line-height: 1.15;
   letter-spacing: -0.04em;
-}
-
-/* Supporting sentence below the login heading. */
-.intro {
-  margin: var(--space-2) 0 var(--space-5);
-  color: var(--text-muted);
-}
-
-/* Vertical layout and spacing for the login controls. */
-form {
-  display: grid;
-  gap: var(--space-4);
-}
-
-/* Groups one label, input, and its validation message. */
-.field-group {
-  display: grid;
-  gap: var(--space-1);
-  text-align: left;
 }
 
 /* Style for form field labels. */
@@ -1157,137 +1098,6 @@ input:focus {
 /* Highlights inputs that currently have a validation error. */
 input[aria-invalid='true'] {
   border-color: var(--error);
-}
-
-/* Positions the password visibility button inside the password input. */
-.password-field {
-  position: relative;
-}
-
-/* Reserves space so typed text does not sit beneath the eye button. */
-.password-field input {
-  padding-right: 50px;
-}
-
-/* Button that changes between hidden and visible password text. */
-.password-toggle {
-  position: absolute;
-  top: 50%;
-  right: 5px;
-  display: grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-radius: 7px;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  background: transparent;
-  cursor: pointer;
-}
-
-/* Provides hover and keyboard-focus feedback for the eye button. */
-.password-toggle:hover,
-/* Adds an accessible focus outline to the eye button. */
-.password-toggle:focus-visible {
-  color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.password-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-/* Sizes and colours both eye SVG icons. */
-.password-toggle svg {
-  width: 21px;
-  height: 21px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
-}
-
-/* Shared compact spacing for feedback messages. */
-.error,
-.success {
-  margin: 0;
-  font-size: 13px;
-}
-
-/* Colour for validation and Firebase sign-in errors. */
-.error {
-  color: var(--error);
-}
-
-/* Centres the link that switches between Login and Registration. */
-.auth-switch {
-  margin: -4px 0 0;
-  color: var(--text-muted);
-  font-size: 14px;
-  text-align: center;
-}
-
-/* Text-style button used to move between the two authentication journeys. */
-.auth-switch-button {
-  padding: 0;
-  border: 0;
-  color: var(--accent);
-  background: transparent;
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-/* Gives the authentication mode switch a visible keyboard focus outline. */
-.auth-switch-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-
-/* Primary button that submits the login form. */
-.submit-button {
-  min-height: 50px;
-  border: 0;
-  border-radius: 9px;
-  color: #fff;
-  background: var(--accent);
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 150ms ease, transform 150ms ease;
-}
-
-/* Darkens the sign-in button while it is hovered. */
-.submit-button:hover {
-  background: var(--accent-hover);
-}
-
-
-.submit-button:disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
-
-
-.submit-button:active {
-  transform: translateY(1px);
-}
-
-/* Adds an accessible focus outline to the sign-in button. */
-.submit-button:focus-visible {
-  outline: 3px solid var(--accent-soft-strong);
-  outline-offset: 2px;
-}
-
-/* Reserved style for successful status feedback. */
-.success {
-  margin-top: -8px;
-  color: var(--success);
-  text-align: center;
 }
 
 /* Reflows multi-column content before it becomes cramped on tablets and compact laptops. */
@@ -1328,15 +1138,6 @@ input[aria-invalid='true'] {
 
 /* Reduces page and card padding for small mobile screens. */
 @media (max-width: 520px) {
-  .login-page {
-    padding: 16px;
-  }
-
-  .login-card {
-    padding: 30px 24px;
-    border-radius: 16px;
-  }
-
   /* Keeps a compact but genuine left sidebar beside the content on phones. */
   .home-page {
     padding: 0;

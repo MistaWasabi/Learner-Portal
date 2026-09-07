@@ -27,6 +27,14 @@ What the App has Currently
 - Admin Database page showing all Firebase Authentication users, roles, email addresses, and read-only task records
 
 
+Code Structure
+- `App.jsx` is the import-only application entry point.
+- `routes/` owns URL mapping, lazy screen loading, and protected-route components.
+- Every feature folder keeps its visual `.jsx`, feature CSS, non-visual `.logic.js`, and (where state is needed) a `useFeatureName.js` hook together.
+- Firebase Authentication, Firestore listeners/writes, Realtime Database REST requests, calculations, and validation live outside visual JSX files.
+- JSX files focus on accessible markup and connecting buttons/forms to their feature hook.
+
+
 Important
 - Login is controlled by Firebase Users
 - Login survives refreshes during the current browser session, then ends when the browser session ends

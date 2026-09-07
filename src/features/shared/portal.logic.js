@@ -43,7 +43,7 @@ export const courseCatalog = [
   },
 ]
 
-// Fixed options prevent invalid task values being written to Firestore.
+// Fixed options match the values enforced by Realtime Database task rules.
 export const taskCategories = ['General', 'JavaScript', 'Project', 'Support']
 export const taskPriorities = ['low', 'medium', 'high']
 
@@ -115,16 +115,6 @@ export function getDocumentLibraryError(error, action) {
       : 'Your document link could not be saved. Please try again.'
 }
 
-/** Returns task-specific Firebase feedback without exposing technical error details to learners. */
-export function getTaskManagerError(error, action) {
-  if (error.code === 'permission-denied') {
-    return 'Firestore has blocked this action. Publish the latest Firestore rules and try again.'
-  }
-  if (action === 'load') return 'Your tasks could not be loaded. Please try again.'
-  if (action === 'delete') return 'Your task could not be deleted. Please try again.'
-  return 'Your task could not be saved. Please try again.'
-}
-
 /** Returns learner-friendly course-selection feedback without exposing Firebase implementation details. */
 export function getLearningContentError(error, action) {
   if (error.code === 'permission-denied') {
@@ -170,4 +160,3 @@ export function formatProgressTimestamp(timestamp) {
   if (!timestamp?.toDate) return 'just now'
   return new Intl.DateTimeFormat('en-ZA', { dateStyle: 'medium', timeStyle: 'short' }).format(timestamp.toDate())
 }
-

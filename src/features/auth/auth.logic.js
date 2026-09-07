@@ -1,8 +1,7 @@
 // Roles are allow-listed so an unexpected token value can never gain access in the interface.
 const validRoles = new Set(['admin', 'teacher', 'student'])
 
-// Maps internal claim values to the friendly labels shown in the portal interface.
-// Keeping this map here avoids repeating role wording across visual components.
+// Keeping labels with claim checks prevents UI components from duplicating trusted role wording.
 const roleLabels = {
   admin: 'Admin',
   teacher: 'Teacher',

@@ -1,0 +1,96 @@
+/* Registration-only classes use a registration- prefix so feature styles remain isolated. */
+.registration-form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.registration-field-group {
+  display: grid;
+  gap: var(--space-1);
+  text-align: left;
+}
+
+.registration-label {
+  color: var(--text-heading);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.registration-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 13px;
+  border: 1px solid var(--input-border);
+  border-radius: 9px;
+  outline: none;
+  color: var(--text-heading);
+  background: var(--input-bg);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.registration-input::placeholder {
+  color: var(--placeholder);
+}
+
+.registration-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.registration-input[aria-invalid='true'] {
+  border-color: var(--error);
+}
+
+.registration-error {
+  margin: 0;
+  color: var(--error);
+  font-size: 13px;
+}
+
+.registration-submit-button {
+  min-height: 50px;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.registration-submit-button:hover {
+  background: var(--accent-hover);
+}
+
+.registration-submit-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.registration-submit-button:active {
+  transform: translateY(1px);
+}
+
+.registration-submit-button:focus-visible {
+  outline: 3px solid var(--accent-soft-strong);
+  outline-offset: 2px;
+}
+
+.registration-route-prompt {
+  margin: -4px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.registration-route-link {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.registration-route-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}

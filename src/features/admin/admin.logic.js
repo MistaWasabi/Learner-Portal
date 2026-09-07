@@ -1,5 +1,6 @@
 import { httpsCallable } from 'firebase/functions'
 import { firebaseFunctions } from '../../firebase'
+import { getAllTasksForAdmin } from '../tasks/taskManager.logic'
 
 // The callable Function checks the Admin claim again on Firebase's server before returning any email address.
 const listPortalUsersCallable = httpsCallable(firebaseFunctions, 'listPortalUsers')
@@ -30,6 +31,33 @@ export function flattenAdminTasks(tasksByOwner) {
       ...task,
     }))
   )).sort((firstTask, secondTask) => (secondTask.createdAt || 0) - (firstTask.createdAt || 0))
+}
+
+/** Loads the two protected Admin data sources together so the directory and task counts stay in sync. */
+export async function loadAdminDatabase(user) {
+  const [portalUsers, taskResult] = await Promise.all([
+    getAllPortalUsers(),
+    getAllTasksForAdmin(user),
+  ])
+
+  return {
+    portalUsers,
+    tasks: flattenAdminTasks(taskResult.tasksByOwner),
+    restRequest: taskResult.request,
+  }
+}
+
+/** Counts tasks in memory, avoiding a duplicate directory or ownership field in Realtime Database. */
+export function getTaskCountByOwner(tasks) {
+  return tasks.reduce((counts, task) => ({
+    ...counts,
+    [task.ownerUid]: (counts[task.ownerUid] || 0) + 1,
+  }), {})
+}
+
+/** Creates a temporary UID lookup for the current protected Admin page render only. */
+export function getPortalUsersByUid(portalUsers) {
+  return Object.fromEntries(portalUsers.map((portalUser) => [portalUser.uid, portalUser]))
 }
 
 /** Converts Functions and REST errors into a privacy-safe explanation for an Admin. */
