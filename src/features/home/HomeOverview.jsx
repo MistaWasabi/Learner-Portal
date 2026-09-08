@@ -46,6 +46,12 @@ export function HomeOverview({ user }) {
           <p>Keep your learning-document links organised and available to you.</p>
           <button className="overview-button" type="button" onClick={() => navigate('/documents')}>Open document library</button>
         </article>
+        <article className="overview-card">
+          <p className="overview-label">Support booking</p>
+          <strong>{overview.supportBookingCount} request{overview.supportBookingCount === 1 ? '' : 's'}</strong>
+          <p>Request learning support and track staff updates in one private place.</p>
+          <button className="overview-button" type="button" onClick={() => navigate('/support')}>Open support booking</button>
+        </article>
       </section>
     </div>
   )

@@ -11,6 +11,7 @@ const HomeOverview = lazy(() => import('../features/home/HomeOverview').then((mo
 const LearningContent = lazy(() => import('../features/learning/LearningContent').then((module) => ({ default: module.LearningContent })))
 const LearnerProgress = lazy(() => import('../features/progress/LearnerProgress').then((module) => ({ default: module.LearnerProgress })))
 const TaskManager = lazy(() => import('../features/tasks/TaskManager').then((module) => ({ default: module.TaskManager })))
+const SupportBookings = lazy(() => import('../features/support/SupportBookings').then((module) => ({ default: module.SupportBookings })))
 const DocumentLibrary = lazy(() => import('../features/documents/DocumentLibrary').then((module) => ({ default: module.DocumentLibrary })))
 const AdminDatabase = lazy(() => import('../features/admin/AdminDatabase').then((module) => ({ default: module.AdminDatabase })))
 
@@ -59,6 +60,7 @@ export function PortalRouter() {
                 <Route path="/admin" element={<AdminDatabase user={session?.user} />} />
               </Route>
               <Route path="/tasks" element={<TaskManager user={session?.user} />} />
+              <Route path="/support" element={<SupportBookings user={session?.user} role={session?.role} />} />
               <Route path="/documents" element={<DocumentLibrary user={session?.user} />} />
             </Route>
           </Route>

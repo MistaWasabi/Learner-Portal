@@ -1,2 +1,227 @@
-/* Feature-specific styles will be added here as the compatibility stylesheet is migrated without altering the approved portal design. */
+/* Each class starts with document-library so these upload styles cannot affect other portal forms. */
+.document-library-heading h2,
+.document-library-heading p {
+  margin-top: 0;
+}
 
+.document-library-heading p {
+  margin-bottom: var(--space-4);
+  color: var(--text-muted);
+}
+
+/* The title, selected file, and upload action remain visually related on wide screens. */
+.document-upload-form {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.8fr) minmax(250px, 1.2fr) auto;
+  align-items: start;
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
+}
+
+.document-upload-field {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.document-upload-field label {
+  color: var(--text-heading);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.document-upload-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 9px;
+  color: var(--text-heading);
+  background: var(--input-bg);
+}
+
+.document-upload-field input:focus {
+  border-color: var(--accent);
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.document-upload-field input[type='file'] {
+  padding: 4px;
+  cursor: pointer;
+}
+
+/* The browser keeps the native file picker behaviour, while this pseudo-element gives its button the portal's primary-action style. */
+.document-upload-field input[type='file']::file-selector-button {
+  min-height: 34px;
+  margin-right: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.document-upload-field input[type='file']::file-selector-button:hover {
+  background: var(--accent-hover);
+}
+
+.document-upload-help,
+.document-selected-file {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.document-selected-file {
+  color: var(--text-heading);
+  overflow-wrap: anywhere;
+}
+
+.document-upload-button,
+.document-library-open-button {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.document-upload-button {
+  /* This offsets the button by the label row so it lines up with both actual form controls, not helper text below the file field. */
+  align-self: start;
+  margin-top: calc(1rem + var(--space-1));
+}
+
+.document-upload-button:hover,
+.document-library-open-button:hover {
+  background: var(--accent-hover);
+}
+
+.document-upload-button:disabled,
+.document-library-open-button:disabled,
+.document-library-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.document-library-error,
+.document-library-success {
+  margin: var(--space-3) 0 0;
+  font-size: 14px;
+}
+
+.document-library-error {
+  color: var(--error);
+}
+
+.document-library-success {
+  color: var(--success);
+}
+
+.document-library-list {
+  display: grid;
+  margin-top: var(--space-3);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.document-library-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.document-library-item + .document-library-item {
+  border-top: 1px solid var(--border);
+}
+
+.document-library-item h3,
+.document-library-item p,
+.document-library-empty {
+  margin: 0;
+}
+
+.document-library-item h3 {
+  color: var(--text-heading);
+  font-size: 15px;
+}
+
+.document-library-item p,
+.document-library-empty {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.document-library-empty {
+  padding: var(--space-3);
+}
+
+.document-library-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+}
+
+.document-library-open-button,
+.document-library-delete-button {
+  min-height: 38px;
+  padding: 0 var(--space-3);
+}
+
+.document-library-delete-button {
+  border: 1px solid color-mix(in srgb, var(--error) 35%, var(--border));
+  border-radius: 8px;
+  color: var(--error);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.document-library-delete-button:hover {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+}
+
+@media (max-width: 700px) {
+  .document-upload-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .document-upload-button {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .document-upload-form {
+    grid-template-columns: 1fr;
+  }
+
+  .document-upload-button {
+    grid-column: auto;
+  }
+
+  .document-library-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .document-library-actions,
+  .document-library-open-button,
+  .document-library-delete-button {
+    width: 100%;
+  }
+}

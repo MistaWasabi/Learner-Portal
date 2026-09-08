@@ -7,6 +7,7 @@ export function useHomeOverview(user) {
   const [selectedCourseIds, setSelectedCourseIds] = useState([])
   const [lessonProgress, setLessonProgress] = useState([])
   const [documentCount, setDocumentCount] = useState(0)
+  const [supportBookingCount, setSupportBookingCount] = useState(0)
   const [overviewError, setOverviewError] = useState('')
 
   useEffect(() => subscribeToHomeOverview(user, {
@@ -14,6 +15,7 @@ export function useHomeOverview(user) {
     onDocumentCount: setDocumentCount,
     onCourseIds: setSelectedCourseIds,
     onLessonProgress: setLessonProgress,
+    onSupportBookingCount: setSupportBookingCount,
     onError: setOverviewError,
   }), [user])
 
@@ -22,7 +24,8 @@ export function useHomeOverview(user) {
     selectedCourseIds,
     lessonProgress,
     documentCount,
-  }), [tasks, selectedCourseIds, lessonProgress, documentCount])
+    supportBookingCount,
+  }), [tasks, selectedCourseIds, lessonProgress, documentCount, supportBookingCount])
 
   return { overview, overviewError }
 }

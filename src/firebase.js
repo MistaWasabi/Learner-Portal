@@ -7,8 +7,11 @@ import { browserSessionPersistence, getAuth, setPersistence } from 'firebase/aut
 // Callable Functions provide trusted server-side tasks such as listing Firebase Auth users for an Admin.
 import { getFunctions } from 'firebase/functions'
 
-// Firestore stores the portal's non-relational document-link records.
+// Firestore stores non-relational portal records, including document metadata.
 import { getFirestore } from 'firebase/firestore'
+
+// Cloud Storage holds the private document bytes; Firestore holds only their metadata and path.
+import { getStorage } from 'firebase/storage'
 
 // Public browser configuration values loaded from the local Vite environment file.
 const firebaseConfig = {
@@ -30,6 +33,9 @@ export const auth = getAuth(app)
 
 // Exposes the non-relational Firestore database for document metadata records.
 export const db = getFirestore(app)
+
+// Exposes the configured Cloud Storage bucket for learner-owned document files.
+export const storage = getStorage(app)
 
 // Uses the same region as the deployed Custom Claims functions, avoiding a cross-region Function call.
 export const firebaseFunctions = getFunctions(app, 'us-central1')

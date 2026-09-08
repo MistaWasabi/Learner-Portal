@@ -7,6 +7,7 @@ const portalNavigation = [
   { path: '/progress', label: 'Learner progress', requiresProgressAccess: true },
   { path: '/admin', label: 'Admin database', requiresAdminAccess: true },
   { path: '/tasks', label: 'Task manager' },
+  { path: '/support', label: 'Support booking' },
   { path: '/documents', label: 'Document library' },
 ]
 

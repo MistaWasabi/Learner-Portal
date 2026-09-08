@@ -38,10 +38,10 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - [x] Firebase Authentication with registration, sign-in, sign-out, and session-gated content.
 - [x] Firebase Realtime Database with structured, owner-based task records and published security rules.
 - [x] REST CRUD for learner tasks (`POST`, `GET`, `PATCH`, `DELETE`), with an in-app safe request log and final verification GET after each mutation. Complete the screenshot fields in `REST_CRUD_EVIDENCE.md` during the live demonstration.
+- [x] Support Booking with validated learner requests, private learner tracking, and Teacher/Admin staff status updates.
 - [ ] ES6 classes, object instances, and an inheritance or composition relationship.
 - [ ] Validation for names, email, passwords, numeric fields, and required data.
 - [ ] Error handling with `try`, `catch`, `finally`, and at least one deliberately thrown custom error.
-- [ ] Debugging/refactoring evidence showing an issue before and after correction.
 - [ ] Dynamic interface creation, updates, and removals.
 - [ ] Timer animation and controlled multimedia.
 - [ ] Approved playable mini-game with a Firebase-stored score or outcome.
@@ -80,9 +80,9 @@ This section records the Week 1 feedback so it guides future changes rather than
 
 ### File uploads and Firebase Storage
 
-- Replace the current external document-link approach with Firebase Storage only after the project owner has approved the billing upgrade. Cloud Storage for Firebase currently requires the Blaze plan, although no-cost usage allowances may still apply.
-- When Storage is approved, create owner-only Storage Rules before any upload interface. Store document metadata such as title, owner UID, upload time, and Storage path in Firestore; store file bytes only in the Storage bucket.
-- Keep the current document-link library available until the Storage migration is complete, so the portal continues to work without a paid Storage bucket.
+- Firebase Storage is approved through the Blaze plan. New uploads use an owner-only Storage path and strict type/size rules.
+- Document bytes are stored at `documents/{uid}/{documentId}` in Firebase Storage. Firestore stores only title, Storage path, MIME type, size, and upload time at `users/{uid}/documents/{documentId}`.
+- The library never stores a password, email, or download URL. It requests a Firebase download URL only after the owner asks to download the file, then does not persist that URL in app state or browser storage.
 
 ### Recommended implementation order from this feedback
 
@@ -101,10 +101,10 @@ This section records the Week 1 feedback so it guides future changes rather than
 
 ## Current Firestore Document Library
 
-- The Home page includes a private Document Library.
-- Firestore saves the link record at `users/{uid}/documents/{documentId}`; each learner reads only their own subcollection.
-- A record contains a title, an external HTTPS document link, and a creation date. Firebase does not store the document file itself.
-- `firestore.rules` is a prototype owner-only rule set that must be reviewed and published in the Firebase Console before document links will work.
+- `/documents` includes a private Document Library, with a condensed count on Home.
+- A learner uploads PDF, Word, OpenDocument, RTF, or plain-text files up to 10 MiB. The file bytes are stored in Firebase Storage; Firestore saves only private metadata at `users/{uid}/documents/{documentId}`.
+- Users can download or permanently delete only their own files. Deleting a document removes the Storage file and the matching Firestore metadata.
+- `firestore.rules`, `storage.rules`, and `DOCUMENT_STORAGE_RULES_REVIEW.md` document the prototype owner-only protections. Firestore and Storage Rules are both published; they should still be tested with separate learner accounts before broad sharing.
 
 ## Current Realtime Database Task Manager
 
@@ -121,11 +121,20 @@ This section records the Week 1 feedback so it guides future changes rather than
 - It returns only the required directory fields: UID, username, email address, Custom Claim role, and disabled/active state. This data is never copied into Firestore or Realtime Database.
 - The Realtime Database rules grant an Admin read-only access to all task paths. The Cloud Function separately verifies the Admin claim before returning email addresses.
 
+## Current Support Booking
+
+- `/support` is available to every authenticated user through the persistent sidebar and is also summarised on the Home page.
+- A learner creates a validated support request with topic, preferred date/time, and support details. The booking is stored in Firestore at `supportBookings/{bookingId}`.
+- A booking stores the learner's immutable Firebase UID, a short display name, its preferred timestamp, status, timestamps, and an optional staff note. It deliberately stores no learner email address.
+- Learners can list only their own bookings, may cancel a request while it is `requested` or `confirmed`, and may permanently delete only their own request after confirmation.
+- Teacher and Admin Custom Claims can see the latest 100 requests in a staff queue and update a request only through these transitions: `requested → confirmed/cancelled` and `confirmed → completed/cancelled`.
+- Firestore Rules enforce ownership, allowed fields, string-size limits, immutable original booking details, trusted staff claims, and the permitted status workflow. `SUPPORT_BOOKING_RULES_REVIEW.md` records the model and security review.
+
 ## Suggested Build Order
 
 1. Capture the live REST CRUD screenshots and downloaded safe logs using `REST_CRUD_EVIDENCE.md`.
 2. Add a printable progress summary and a safe non-sensitive preference cookie.
-3. Build the validated support-booking flow, then role-based booking visibility for assessors.
+3. Test Support Booking with Student, Teacher, and Admin accounts after the published Firestore Rules update.
 4. Add verified-email handling and plan/test Firebase multi-factor authentication with a disposable development inbox.
 5. Add the assessment-approved animation/multimedia feature and playable JavaScript mini-game with a recorded outcome.
 6. Capture GitHub collaboration, debugging/refactoring, testing, and reflection evidence as development proceeds.

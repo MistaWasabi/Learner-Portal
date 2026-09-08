@@ -20,6 +20,11 @@ export function canViewLearnerProgress(role) {
   return role === 'admin' || role === 'teacher'
 }
 
+/** Returns whether a trusted role may triage and update support bookings for other learners. */
+export function isSupportStaff(role) {
+  return role === 'admin' || role === 'teacher'
+}
+
 /** Returns whether a Custom Claim permits access to administrator-only data, including learner emails. */
 export function isAdmin(role) {
   return role === 'admin'

@@ -1,4 +1,4 @@
-import { collection, onSnapshot } from 'firebase/firestore'
+import { collection, onSnapshot, query, where } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { courseCatalog, createLessonProgressId, getLocalDateKey } from '../shared/portal.logic'
 import { getOwnTasks, getTaskManagerError } from '../tasks/taskManager.logic'
@@ -6,7 +6,7 @@ import { getOwnTasks, getTaskManagerError } from '../tasks/taskManager.logic'
 const overviewLoadError = 'Your latest portal totals could not be loaded. Please try again.'
 
 /** Connects Home to the existing owner-only data sources and returns one cleanup function for its listeners. */
-export function subscribeToHomeOverview(user, { onTasks, onDocumentCount, onCourseIds, onLessonProgress, onError }) {
+export function subscribeToHomeOverview(user, { onTasks, onDocumentCount, onCourseIds, onLessonProgress, onSupportBookingCount, onError }) {
   let isCurrentUser = true
 
   // Tasks use the assessment-required Realtime Database REST GET; the other compact totals remain in Firestore.
@@ -33,17 +33,24 @@ export function subscribeToHomeOverview(user, { onTasks, onDocumentCount, onCour
     (snapshot) => onLessonProgress(snapshot.docs.map((progressSnapshot) => progressSnapshot.data())),
     () => onError(overviewLoadError),
   )
+  // The owner filter matches Support Booking Rules and keeps Home limited to the signed-in learner's request count.
+  const supportBookingsUnsubscribe = onSnapshot(
+    query(collection(db, 'supportBookings'), where('ownerUid', '==', user.uid)),
+    (snapshot) => onSupportBookingCount(snapshot.size),
+    () => onError(overviewLoadError),
+  )
 
   return () => {
     isCurrentUser = false
     documentUnsubscribe()
     courseUnsubscribe()
     lessonUnsubscribe()
+    supportBookingsUnsubscribe()
   }
 }
 
 /** Calculates display-only Home totals from owner-scoped database data without storing duplicate summary records. */
-export function createHomeOverview({ tasks, selectedCourseIds, lessonProgress, documentCount }) {
+export function createHomeOverview({ tasks, selectedCourseIds, lessonProgress, documentCount, supportBookingCount }) {
   const completedTaskCount = tasks.filter((task) => task.completed).length
   const outstandingTaskCount = tasks.length - completedTaskCount
   const overdueTaskCount = tasks.filter((task) => !task.completed && task.dueDate && task.dueDate < getLocalDateKey()).length
@@ -60,6 +67,7 @@ export function createHomeOverview({ tasks, selectedCourseIds, lessonProgress, d
     taskCount: tasks.length,
     completionRate,
     documentCount,
+    supportBookingCount,
     summaryItems: [
       { label: 'Courses selected', value: selectedCourseIds.length },
       { label: 'Lessons complete', value: completedLessonCount },
@@ -67,6 +75,7 @@ export function createHomeOverview({ tasks, selectedCourseIds, lessonProgress, d
       { label: 'Completed', value: completedTaskCount },
       { label: 'Outstanding', value: outstandingTaskCount },
       { label: 'Overdue', value: overdueTaskCount },
+      { label: 'Support requests', value: supportBookingCount },
     ],
   }
 }
