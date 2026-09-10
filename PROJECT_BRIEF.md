@@ -92,6 +92,17 @@ This section records the Week 1 feedback so it guides future changes rather than
 4. Add verified-email handling and plan/test MFA with safe test accounts.
 5. Enable Firebase Storage only after the billing decision, then build secure file upload and deletion.
 
+## Week 2 Feedback and Current Technical Position
+
+- **Automatic role assignment:** Implemented in `functions/index.js` as `assignDefaultStudentRole`. It runs in the cloud when Firebase Authentication creates an account, uses the new account's unique UID, and assigns the safe default `student` Custom Claim through the Firebase Admin SDK.
+- **Privileged role-change call:** Implemented as the Admin-only `assignRole` callable Cloud Function. It checks the caller's Admin claim, finds the target by email, writes the Custom Claim against the target UID, and returns the UID and assigned role.
+- **Role visibility:** The Admin Database page receives UID, email, and role directly from the protected `listPortalUsers` Cloud Function. Roles are intentionally not copied to a client-writable database user table because Custom Claims are the permission source of truth.
+- **Cloud execution:** All trusted Cloud Functions are centralised in `functions/index.js`. React calls only the protected callable functions it needs; it never imports the Admin SDK or changes roles locally.
+- **Component refactor:** `src/App.jsx` is now import-only. `src/main.jsx` starts React and imports the master styles. Route composition and lazy loading live in `src/routes/PortalRouter.jsx`; focused feature folders own their visual JSX, CSS, logic, and hooks.
+- **Lazy loading:** Every route-level screen uses React `lazy()`, so it is downloaded only when the user navigates to it.
+- **Master styles:** `src/index.css` holds global reset, tokens, and page-wide CSS. Feature styling is being progressively moved into each feature's own CSS file; `src/styles/portal.css` remains a documented compatibility stylesheet during that migration.
+- **Documentation:** `ARCHITECTURE.md` is the codebase map for future work and assessment explanation.
+
 ## Future Firebase Knowledge and Architecture
 
 - **Custom claims:** learn how Firebase Auth custom claims represent trusted roles such as `learner`, `assessor`, or `admin`. They must be assigned only by the Firebase Admin SDK in a trusted environment, such as a Cloud Function; React must never assign its own claims.

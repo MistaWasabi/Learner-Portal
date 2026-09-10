@@ -12,19 +12,21 @@ Firebase Setup
 1. Copy `.env.example` and rename the copy to `.env.local`
 2. Add the Firebase Web App settings from Firebase Console into `.env.local`
 3. In Firebase Console, enable Authentication → Email/Password
-4. In Firestore Database → Rules, copy in `firestore.rules` from this project and Publish
+4. Publish the Firestore rules: `npx -y firebase-tools@latest deploy --only firestore:rules --project learner-portal-b7224`
 5. Create or select the Realtime Database instance, then add its exact URL as `VITE_FIREBASE_DATABASE_URL` in `.env.local` and restart Vite.
-6. Publish the Realtime Database rules and the Admin directory Function: `npx -y firebase-tools@latest deploy --only database,functions --project learner-portal-b7224`
+6. Create the default Firebase Storage bucket, then publish its owner-only rules: `npx -y firebase-tools@latest deploy --only storage --project learner-portal-b7224`
+7. Publish the Realtime Database rules and Cloud Functions: `npx -y firebase-tools@latest deploy --only database,functions --project learner-portal-b7224`
 
 
 What the App has Currently
 - Login and Registration through Firebase Authentication
 - Home Screen with a persistent side bar
 - Task Manager using Realtime Database REST CRUD (`POST`, `GET`, `PATCH`, and `DELETE`)
-- Document Library using Firestore links
+- Document Library using private Firebase Storage uploads and Firestore metadata
 - Learning Courses and Lesson Completion
 - Learner Progress Screen
 - Admin Database page showing all Firebase Authentication users, roles, email addresses, and read-only task records
+- Support Booking for learner requests and Teacher/Admin status management
 
 
 Code Structure
@@ -33,6 +35,7 @@ Code Structure
 - Every feature folder keeps its visual `.jsx`, feature CSS, non-visual `.logic.js`, and (where state is needed) a `useFeatureName.js` hook together.
 - Firebase Authentication, Firestore listeners/writes, Realtime Database REST requests, calculations, and validation live outside visual JSX files.
 - JSX files focus on accessible markup and connecting buttons/forms to their feature hook.
+- See `ARCHITECTURE.md` for the full code map, Firebase-service map, role-assignment flow, and “where do I change this?” guide.
 
 
 Important
