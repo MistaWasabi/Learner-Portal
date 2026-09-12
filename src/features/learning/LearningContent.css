@@ -1,2 +1,279 @@
-/* Feature-specific styles will be added here as the compatibility stylesheet is migrated without altering the approved portal design. */
+/* Learning Content owns the course catalogue and lesson-completion interface. */
+.learning-content {
+  display: grid;
+  gap: var(--space-4);
+}
 
+.learning-section-heading h2 {
+  margin-bottom: 6px;
+}
+
+.learning-section-heading p {
+  margin: 0 0 var(--space-4);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+/* Flexible cards keep their actions aligned even when course descriptions are different lengths. */
+.course-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg);
+}
+
+.course-card-selected {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--accent-soft));
+}
+
+.course-card h3,
+.active-course-content h3,
+.lesson-item h4 {
+  margin: 0;
+  color: var(--text-heading);
+}
+
+.course-card h3 {
+  font-size: 17px;
+}
+
+.course-card p,
+.active-course-content p,
+.lesson-item p {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.course-card > div > p:not(.course-meta) {
+  margin: 10px 0 0;
+}
+
+.course-meta {
+  margin: 0 0 8px;
+  color: var(--accent) !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.course-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.course-select-button,
+.course-view-button,
+.course-remove-button {
+  min-height: 40px;
+  padding: 0 13px;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.course-select-button {
+  border: 0;
+  color: #fff;
+  background: var(--accent);
+}
+
+.course-select-button:hover {
+  background: var(--accent-hover);
+}
+
+.course-view-button {
+  border: 1px solid var(--input-border);
+  color: var(--accent);
+  background: transparent;
+}
+
+.course-view-button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.course-remove-button {
+  border: 1px solid color-mix(in srgb, var(--error) 35%, var(--border));
+  color: var(--error);
+  background: transparent;
+}
+
+.course-remove-button:hover {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+}
+
+.course-select-button:disabled,
+.course-remove-button:disabled,
+.lesson-completion-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.course-select-button:focus-visible,
+.course-view-button:focus-visible,
+.course-remove-button:focus-visible,
+.lesson-completion-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.learning-status {
+  margin: 0 0 var(--space-3);
+  text-align: left;
+}
+
+.active-course-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.active-course-header h3 {
+  font-size: 20px;
+}
+
+.active-course-header p:not(.course-meta) {
+  max-width: 650px;
+  margin: 10px 0 0;
+}
+
+.active-course-header .course-progress-label {
+  margin-top: var(--space-3);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lesson-list {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.lesson-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.lesson-number {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lesson-item h4 {
+  font-size: 14px;
+}
+
+.lesson-item p {
+  margin: 5px 0 0;
+}
+
+.lesson-duration {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lesson-actions {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-2);
+}
+
+.lesson-completion-button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 7px;
+  color: var(--accent);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lesson-completion-button:hover,
+.lesson-completion-button:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.lesson-completion-button-complete {
+  border-color: color-mix(in srgb, var(--success) 42%, var(--border));
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 9%, transparent);
+}
+
+.empty-learning-content {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .course-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .course-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .active-course-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .course-card-actions > *,
+  .active-course-header .course-remove-button {
+    flex: 1;
+  }
+
+  .lesson-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .lesson-actions {
+    grid-column: 2;
+    justify-items: start;
+  }
+}

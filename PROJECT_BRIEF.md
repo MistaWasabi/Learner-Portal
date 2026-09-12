@@ -100,7 +100,7 @@ This section records the Week 1 feedback so it guides future changes rather than
 - **Cloud execution:** All trusted Cloud Functions are centralised in `functions/index.js`. React calls only the protected callable functions it needs; it never imports the Admin SDK or changes roles locally.
 - **Component refactor:** `src/App.jsx` is now import-only. `src/main.jsx` starts React and imports the master styles. Route composition and lazy loading live in `src/routes/PortalRouter.jsx`; focused feature folders own their visual JSX, CSS, logic, and hooks.
 - **Lazy loading:** Every route-level screen uses React `lazy()`, so it is downloaded only when the user navigates to it.
-- **Master styles:** `src/index.css` holds global reset, tokens, and page-wide CSS. Feature styling is being progressively moved into each feature's own CSS file; `src/styles/portal.css` remains a documented compatibility stylesheet during that migration.
+- **Master styles:** `src/MasterStyles.css` holds global reset, tokens, form defaults, and shared visual primitives. Each feature owns its own screen styling; the former compatibility stylesheet has been removed.
 - **Documentation:** `ARCHITECTURE.md` is the codebase map for future work and assessment explanation.
 
 ## Future Firebase Knowledge and Architecture

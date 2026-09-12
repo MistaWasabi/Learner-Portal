@@ -1,4 +1,8 @@
 /* Each class starts with document-library so these upload styles cannot affect other portal forms. */
+.document-library {
+  margin-top: 0;
+}
+
 .document-library-heading h2,
 .document-library-heading p {
   margin-top: 0;

@@ -10,7 +10,7 @@ This guide is the quick map for finding code in the Learner Portal. It describes
 | Application entry composition | `src/App.jsx` | Imports and exports the router only, keeping the top-level entry predictable. |
 | URLs, lazy loading, session access | `src/routes/PortalRouter.jsx` | Maps URLs to screens and loads a feature only when the learner visits it. |
 | Protected-route decisions | `src/routes/RouteGuards.jsx` | Keeps login and role checks outside screen components. |
-| Master visual variables and reset | `src/index.css` | Holds font, colour, spacing, and browser-wide defaults only. |
+| Master Styles | `src/MasterStyles.css` | Holds font, colour, spacing, and browser-wide defaults only. |
 | Shared portal layout | `src/features/portal/PortalLayout.jsx` | Renders the persistent sidebar and the changing page area. |
 
 `App.jsx` stays intentionally small. The router must contain React Router elements because routing is visual React work; Firebase calls and data calculations remain inside feature logic files and hooks.
@@ -88,9 +88,9 @@ If an assessor specifically requires a database user-profile record, add it only
 
 ## Styling
 
-- `src/index.css` is the master stylesheet: reset, font, colour variables, fluid spacing variables, and page-wide defaults.
+- `src/MasterStyles.css` is the master stylesheet: reset, font, colour variables, fluid spacing variables, form defaults, and shared visual primitives.
 - Each feature owns its visual styles, for example `src/features/documents/DocumentLibrary.css`.
-- `src/styles/portal.css` is a compatibility stylesheet from before the component refactor. New feature-specific styling belongs in the matching feature CSS file so it can be progressively moved out of this shared file.
+- `src/styles/portal.css` has been removed. Portal shell, Home, Learning, Learner Progress, Task Manager, and route-loading CSS now live next to their owning component.
 
 ## Practical “Where Do I Change This?” Guide
 
