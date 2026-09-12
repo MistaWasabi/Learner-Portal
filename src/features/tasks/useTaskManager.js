@@ -37,6 +37,7 @@ export function useTaskManager(user) {
     recordRestRequests(request)
   }
 
+  // This first GET supplies the current user's private records and provides the required REST read evidence.
   useEffect(() => {
     let isCurrentUser = true
 
@@ -60,6 +61,7 @@ export function useTaskManager(user) {
     }
   }, [user])
 
+  // Filtering stays in browser memory because all permitted tasks have already been retrieved through the owner-scoped path.
   const visibleTasks = useMemo(() => tasks.filter((task) => {
     if (taskFilter === 'active') return !task.completed
     if (taskFilter === 'completed') return task.completed

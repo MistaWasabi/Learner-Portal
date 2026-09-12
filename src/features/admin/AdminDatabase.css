@@ -42,6 +42,92 @@
   color: var(--text-muted);
 }
 
+/* This form requests a role change but never writes a Custom Claim locally; Cloud Functions remain the permission boundary. */
+.admin-role-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(130px, 0.45fr) auto;
+  align-items: end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card-bg) 94%, var(--accent-soft));
+}
+
+.admin-role-form-heading {
+  grid-column: 1 / -1;
+}
+
+.admin-role-form-heading h3,
+.admin-role-form-heading p {
+  margin: 0;
+}
+
+.admin-role-form-heading p {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.admin-role-field {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--text-heading);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-role-field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  color: var(--text-heading);
+  background: var(--input-bg);
+}
+
+.admin-role-field select:focus {
+  border-color: var(--accent);
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.admin-role-submit-button {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-role-submit-button:hover {
+  background: var(--accent-hover);
+}
+
+.admin-role-submit-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.admin-role-error,
+.admin-role-success {
+  margin: var(--space-3) 0 0;
+  font-size: 14px;
+}
+
+.admin-role-error {
+  color: var(--error);
+}
+
+.admin-role-success {
+  color: var(--success);
+}
+
 .admin-table-wrap {
   margin-top: var(--space-4);
   overflow-x: auto;
@@ -98,6 +184,14 @@
   }
 
   .admin-refresh-button {
+    width: 100%;
+  }
+
+  .admin-role-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-role-submit-button {
     width: 100%;
   }
 }

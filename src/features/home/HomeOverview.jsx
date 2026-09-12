@@ -21,6 +21,7 @@ export function HomeOverview({ user }) {
         ))}
       </section>
 
+      {/* These condensed cards use live feature totals, then send the learner to the focused screen for full controls. */}
       <section className="overview-quick-access" aria-label="Portal sections">
         <article className="overview-card">
           <p className="overview-label">Learning</p>

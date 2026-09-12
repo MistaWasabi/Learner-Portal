@@ -39,6 +39,7 @@ export function usePortalSession() {
     setIsAuthLoading(false)
   }
 
+  // Firebase, not this application, is responsible for restoring the session credential after a refresh.
   useEffect(() => {
     let unsubscribe
     let isComponentMounted = true

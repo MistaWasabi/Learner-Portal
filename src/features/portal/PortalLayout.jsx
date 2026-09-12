@@ -22,6 +22,7 @@ export function PortalLayout({ user, role, onSignOut }) {
             <strong className="sidebar-name">{userName}</strong>
             {/* The sidebar displays only the trusted claim role, never the sign-in email address. */}
             <p className="sidebar-role">{roleLabel}</p>
+            {/* Navigation is calculated from the trusted role so protected destinations are not advertised to students. */}
             <nav className="sidebar-navigation" aria-label="Portal navigation">
               {visibleNavigation.map((item) => (
                 <NavLink className={({ isActive }) => `sidebar-nav-button ${isActive ? 'sidebar-nav-active' : ''}`} key={item.path} to={item.path}>
@@ -41,6 +42,7 @@ export function PortalLayout({ user, role, onSignOut }) {
             <p className="eyebrow">Learner Portal</p>
             <h1 id="dashboard-heading">{activeScreenLabel}</h1>
           </header>
+          {/* React Router swaps only the selected feature screen here; the sidebar remains mounted and stable. */}
           <Outlet />
         </section>
       </div>

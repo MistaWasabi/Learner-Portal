@@ -40,6 +40,7 @@ export function SupportBookings({ user, role }) {
           </div>
         </div>
 
+        {/* The learner enters only the request details; the hook adds trusted owner data from the signed-in Firebase user. */}
         <form className="support-booking-form" onSubmit={handleBookingSubmit} noValidate>
           <div className="support-booking-field">
             <label htmlFor="support-topic">Support topic</label>
@@ -106,6 +107,7 @@ export function SupportBookings({ user, role }) {
         </div>
       </section>
 
+      {/* This queue is rendered only for Teacher/Admin claims; Firestore Rules enforce the same restriction on the data read. */}
       {isStaff && (
         <section className="dashboard-card support-booking-staff-list" aria-labelledby="staff-support-bookings-heading">
           <div className="support-booking-heading">

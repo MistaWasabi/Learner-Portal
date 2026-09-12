@@ -23,6 +23,7 @@ export function useDocumentLibrary(user) {
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState('')
 
+  // Firestore returns an unsubscribe function, which React runs when the user changes or leaves the Document Library route.
   useEffect(() => subscribeToDocuments(user, {
     onDocuments: (nextDocuments) => {
       setDocuments(nextDocuments)

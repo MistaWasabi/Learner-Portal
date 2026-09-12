@@ -69,7 +69,7 @@ React adapts the interface; Firebase Rules enforce the actual permission
 | Function | Trigger | Result |
 | --- | --- | --- |
 | `assignDefaultStudentRole` | Firebase Auth account creation | Automatically assigns the least-privileged `student` Custom Claim using the new account's UID. This background trigger does not return a response to React. |
-| `assignRole` | Admin-only callable request | Changes another account's role after checking the caller is an Admin; returns the target UID and role. |
+| `assignRole` | Admin-only callable request | Changes another account's role by its selected Firebase UID after checking the caller is an Admin; returns the target UID and role. |
 | `listPortalUsers` | Admin-only callable request | Returns a restricted Firebase Auth user directory: UID, username, email, role, and active/disabled state. |
 
 The browser must never assign its own role. `functions/index.js` runs in Firebase's trusted Cloud Functions environment, and it uses the Firebase Admin SDK there. This is why role changes are safe from browser tampering.
@@ -77,7 +77,7 @@ The browser must never assign its own role. `functions/index.js` runs in Firebas
 ### Where roles appear
 
 - The authenticated user's current role appears beneath their username in the sidebar.
-- The Admin Database screen displays every Firebase Authentication user with their UID, email, and Custom Claim role.
+- The Admin Database screen displays every Firebase Authentication user with their UID, email, and Custom Claim role. Its Role management form sends the chosen UID and role to `assignRole`, then refreshes the directory after the Cloud Function confirms the response.
 - The role is **not copied into Firestore or Realtime Database**. Firebase Auth Custom Claims remain the single source of truth, preventing a learner from changing a database field to promote themselves.
 
 If an assessor specifically requires a database user-profile record, add it only from Cloud Functions as a non-authoritative mirror. Firebase Rules and all permission decisions must continue to use the Custom Claim, never that copied database field.

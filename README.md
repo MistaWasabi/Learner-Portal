@@ -25,7 +25,7 @@ What the App has Currently
 - Document Library using private Firebase Storage uploads and Firestore metadata
 - Learning Courses and Lesson Completion
 - Learner Progress Screen
-- Admin Database page showing all Firebase Authentication users, roles, email addresses, and read-only task records
+- Admin Database page showing all Firebase Authentication users, UIDs, roles, email addresses, read-only task records, and trusted Admin role management
 - Support Booking for learner requests and Teacher/Admin status management
 
 
@@ -57,3 +57,4 @@ Custom Roles
 4. Seed the initial admin: `node .\functions\scripts\set-role.mjs admin aidanbeckley83@gmail.com`
 5. To promote a teacher later: `node .\functions\scripts\set-role.mjs teacher teacher@example.com`
 6. A person whose role changes must sign out and sign in again before their new Custom Claim is available in the app.
+7. After the first Admin is seeded, use the **Role management** form on the Admin Database page for normal role changes. It sends the selected Firebase UID and role to the Admin-protected Cloud Function; React never writes a Custom Claim itself.

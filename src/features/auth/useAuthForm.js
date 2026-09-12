@@ -23,6 +23,7 @@ export function useAuthForm({ authMode, onAuthenticated, navigate }) {
 
   /** Refreshes one field's feedback without mutating the existing error object. */
   function validateField(fieldName, value) {
+    // Keeping these validators in the logic module means Login and Registration cannot accidentally use different rules.
     const validators = {
       username: validateUsername,
       email: validateEmail,

@@ -20,6 +20,7 @@ export function useLearningContent(user) {
   const [learningError, setLearningError] = useState('')
   const [learningSuccess, setLearningSuccess] = useState('')
 
+  // Real-time subscriptions keep course selection and completion indicators current without manually refreshing the page.
   useEffect(() => subscribeToLearningData(user, {
     onSelectedCourseIds: (nextCourseIds) => {
       setSelectedCourseIds(nextCourseIds)
@@ -33,6 +34,7 @@ export function useLearningContent(user) {
     },
   }), [user])
 
+  // Memoising prevents unrelated feedback changes from recalculating the active course and percentage.
   const activeCourse = useMemo(
     () => getActiveCourse(activeCourseId, selectedCourseIds),
     [activeCourseId, selectedCourseIds],
