@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { usePortalSession } from '../features/auth/usePortalSession'
 import { PortalLayout } from '../features/portal/PortalLayout'
 import { ProtectedAdmin, ProtectedLearnerProgress, ProtectedPortal } from './RouteGuards'
+import './PortalRouter.css'
 
 // Each screen is downloaded only when its route is visited, keeping the first Login load lightweight.
 const Login = lazy(() => import('../features/auth/Login').then((module) => ({ default: module.Login })))

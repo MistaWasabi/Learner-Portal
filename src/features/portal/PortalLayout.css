@@ -1,4 +1,123 @@
-/* PortalLayout owns the persistent sidebar. Its existing rules currently remain in styles/portal.css to avoid a visual regression during the CSS migration. */
+/* PortalLayout owns the persistent sidebar and the shell surrounding every authenticated route. */
+.home-page {
+  min-height: 100svh;
+  padding: var(--page-gutter);
+}
+
+/* Two columns keep navigation in one stable place while the route content changes independently. */
+.home-layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  width: min(100%, 1120px);
+  min-height: 620px;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+/* The sidebar remains visible beside the independently scrolling screen content. */
+.user-sidebar {
+  position: sticky;
+  top: var(--page-gutter);
+  align-self: start;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: calc(100svh - var(--page-gutter) - var(--page-gutter));
+  padding: var(--space-5);
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--accent-soft));
+  overflow-y: auto;
+}
+
+.sidebar-brand {
+  margin-bottom: var(--space-6);
+}
+
+.sidebar-label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.sidebar-name {
+  overflow: hidden;
+  color: var(--text-heading);
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-navigation {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-5);
+}
+
+/* NavLink renders an anchor, so this removes browser-link styling while preserving focus visibility. */
+.sidebar-nav-button {
+  display: block;
+  padding: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: transparent;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sidebar-nav-button:hover,
+.sidebar-nav-button:focus-visible {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.sidebar-nav-active {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.sidebar-nav-button:focus-visible,
+.sign-out-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sign-out-button {
+  margin-top: var(--space-1);
+  padding: var(--space-2);
+  border: 1px solid var(--input-border);
+  border-radius: 7px;
+  color: var(--text-heading);
+  background: transparent;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sign-out-button:hover,
+.sign-out-button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.dashboard-content {
+  min-width: 0;
+  padding: var(--space-6);
+  background: var(--card-bg);
+}
+
+.dashboard-heading {
+  margin-bottom: var(--space-5);
+}
 
 /* Separates the learner's trusted Custom Claim from their username without competing with navigation links. */
 .sidebar-role {
@@ -13,5 +132,85 @@
   .sidebar-role {
     text-align: center;
     overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 900px) {
+  .home-layout {
+    grid-template-columns: clamp(10.5rem, 24vw, 12rem) minmax(0, 1fr);
+  }
+
+  .dashboard-content {
+    padding: var(--space-5);
+  }
+}
+
+@media (max-width: 520px) {
+  .home-page {
+    padding: 0;
+  }
+
+  .home-layout {
+    width: 100%;
+    min-height: 100svh;
+    grid-template-columns: 104px minmax(0, 1fr);
+    border: 0;
+    border-radius: 0;
+  }
+
+  .user-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    align-items: stretch;
+    gap: 16px;
+    height: 100svh;
+    padding: 16px 8px;
+    border-right: 1px solid var(--border);
+    border-bottom: 0;
+  }
+
+  .sidebar-brand {
+    width: 34px;
+    height: 34px;
+    margin: 0 auto 18px;
+    border-radius: 9px;
+    font-size: 12px;
+  }
+
+  .sidebar-navigation {
+    grid-template-columns: 1fr;
+    margin-top: 18px;
+  }
+
+  .sidebar-nav-button {
+    padding: 8px 5px;
+    font-size: 12px;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  .sidebar-label,
+  .sidebar-name {
+    text-align: center;
+  }
+
+  .sidebar-name {
+    display: block;
+    font-size: 12px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .sign-out-button {
+    align-self: stretch;
+    margin-top: 0;
+    padding: 8px 4px;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .dashboard-content {
+    padding: var(--space-4);
   }
 }

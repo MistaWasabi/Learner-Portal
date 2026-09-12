@@ -1,2 +1,76 @@
-/* Feature-specific styles will be added here as the compatibility stylesheet is migrated without altering the approved portal design. */
+/* Learner Progress owns the staff-readable progress list and accessible percentage meter. */
+.learner-progress-heading h2 {
+  margin-bottom: var(--space-1);
+}
 
+.learner-progress-heading p {
+  margin: 0 0 var(--space-4);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.progress-status {
+  margin: 0 0 var(--space-3);
+}
+
+.learner-progress-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.learner-progress-item {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(120px, 0.9fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.learner-progress-item h3,
+.learner-progress-item p {
+  margin: 0;
+}
+
+.learner-progress-item h3 {
+  color: var(--text-heading);
+  font-size: 15px;
+}
+
+.learner-progress-item p {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.learner-progress-item .progress-last-updated {
+  font-size: 12px;
+}
+
+/* Text percentage accompanies this visual bar so completion is never communicated by colour alone. */
+.progress-meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--accent-soft);
+}
+
+.progress-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.learner-progress-item > strong {
+  color: var(--text-heading);
+  font-size: 14px;
+}
+
+@media (max-width: 520px) {
+  .learner-progress-item {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+}
