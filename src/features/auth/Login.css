@@ -1,0 +1,96 @@
+/* Login-only form classes use a login- prefix so feature styles cannot leak into Registration. */
+.login-form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.login-field-group {
+  display: grid;
+  gap: var(--space-1);
+  text-align: left;
+}
+
+.login-label {
+  color: var(--text-heading);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.login-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 13px;
+  border: 1px solid var(--input-border);
+  border-radius: 9px;
+  outline: none;
+  color: var(--text-heading);
+  background: var(--input-bg);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.login-input::placeholder {
+  color: var(--placeholder);
+}
+
+.login-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.login-input[aria-invalid='true'] {
+  border-color: var(--error);
+}
+
+.login-error {
+  margin: 0;
+  color: var(--error);
+  font-size: 13px;
+}
+
+.login-submit-button {
+  min-height: 50px;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.login-submit-button:hover {
+  background: var(--accent-hover);
+}
+
+.login-submit-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.login-submit-button:active {
+  transform: translateY(1px);
+}
+
+.login-submit-button:focus-visible {
+  outline: 3px solid var(--accent-soft-strong);
+  outline-offset: 2px;
+}
+
+.login-route-prompt {
+  margin: -4px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.login-route-link {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.login-route-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}

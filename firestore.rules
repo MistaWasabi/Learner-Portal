@@ -2,8 +2,9 @@
 // Assumed Data Model
 // ===============================================================
 // Collection: users/{userId}/documents/{documentId}
-// Fields: name (string, 1-120), url (HTTPS string, 1-2,000), createdAt
-// (server timestamp). Every record belongs only to the userId in its path.
+// Fields: name (string, 1-120), storagePath (documents/{uid}/{documentId}),
+// contentType (allow-listed MIME type), fileSize (1-10 MiB), createdAt (server
+// timestamp). Every metadata record belongs only to the userId in its path.
 // Collection: users/{userId}/tasks/{taskId}
 // Fields: title (string, 1-120), category (string, 1-40), dueDate (YYYY-MM-DD
 // string), priority (low/medium/high), completed (boolean), createdAt (timestamp,
@@ -22,6 +23,17 @@
 // updatedAt (recent server timestamp). This intentionally contains no email or
 // private lesson details and is readable by authenticated learners for now.
 
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+// users/{uid}/documents/{documentId}: private Firebase Storage file metadata.
+// users/{uid}/courseSelections/{courseId}: learner-owned selected course IDs.
+// users/{uid}/lessonProgress/{courseId--lessonId}: learner-owned completion records.
+// learnerProgress/{uid}: small staff-readable course/lesson totals without email addresses.
+// supportBookings/{bookingId}: learner support requests. ownerUid and original request
+// details are immutable; only Teacher/Admin Custom Claims can record staff responses.
+// ===============================================================
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -35,29 +47,40 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Included for future records that store a user ID; the current schemas use the path as ownership.
-    function uidUnchanged() {
-      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    // Roles come only from trusted Firebase Admin SDK Custom Claims, never from Firestore or React.
+    function isProgressStaff() {
+      return isAuthenticated() &&
+        (request.auth.token.role == 'admin' || request.auth.token.role == 'teacher');
     }
 
-    // Prevents a stored user ID from being changed if a future schema needs one.
-    function uidNotModified() {
-      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    // Support staff shares the Teacher/Admin boundary, but a named helper makes booking rules readable.
+    function isSupportStaff() {
+      return isAuthenticated() &&
+        (request.auth.token.role == 'admin' || request.auth.token.role == 'teacher');
     }
 
-    // Applies the same strict schema checks every time a record is written.
-    function isValidDocument() {
+    // The document ID and Storage path must agree, preventing metadata from pointing at another user's file.
+    function isValidDocument(documentId) {
       return request.resource.data.keys().hasOnly([
-          'name', 'url', 'createdAt'
+          'name', 'storagePath', 'contentType', 'fileSize', 'createdAt'
         ]) &&
         request.resource.data.keys().hasAll([
-          'name', 'url', 'createdAt'
+          'name', 'storagePath', 'contentType', 'fileSize', 'createdAt'
         ]) &&
         request.resource.data.name is string &&
         request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 120 &&
-        request.resource.data.url is string &&
-        request.resource.data.url.size() > 0 && request.resource.data.url.size() <= 2000 &&
-        request.resource.data.url.matches('^https://.*') &&
+        request.resource.data.storagePath is string &&
+        request.resource.data.storagePath == 'documents/' + request.auth.uid + '/' + documentId &&
+        request.resource.data.contentType in [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.oasis.opendocument.text',
+          'application/rtf',
+          'text/plain'
+        ] &&
+        request.resource.data.fileSize is int &&
+        request.resource.data.fileSize > 0 && request.resource.data.fileSize <= 10485760 &&
         request.resource.data.createdAt is timestamp &&
         request.resource.data.createdAt >= request.time - duration.value(5, 'm') &&
         request.resource.data.createdAt <= request.time;
@@ -156,17 +179,81 @@ service cloud.firestore {
         request.resource.data.updatedAt <= request.time;
     }
 
+    // Validates every support-booking document so extra fields, very large text, and malformed data are rejected.
+    function isValidSupportBooking() {
+      return request.resource.data.keys().hasOnly([
+          'ownerUid', 'learnerName', 'topic', 'preferredAt', 'details', 'status',
+          'staffNote', 'staffUid', 'createdAt', 'updatedAt', 'staffUpdatedAt'
+        ]) &&
+        request.resource.data.keys().hasAll([
+          'ownerUid', 'learnerName', 'topic', 'preferredAt', 'details', 'status',
+          'staffNote', 'staffUid', 'createdAt', 'updatedAt', 'staffUpdatedAt'
+        ]) &&
+        request.resource.data.ownerUid is string &&
+        request.resource.data.ownerUid.size() > 0 && request.resource.data.ownerUid.size() <= 128 &&
+        request.resource.data.learnerName is string &&
+        request.resource.data.learnerName.size() > 0 && request.resource.data.learnerName.size() <= 50 &&
+        request.resource.data.topic in [
+          'Course content', 'Assessment', 'Technical issue', 'Study plan'
+        ] &&
+        request.resource.data.preferredAt is timestamp &&
+        request.resource.data.preferredAt >= request.time - duration.value(1, 'h') &&
+        request.resource.data.preferredAt <= request.time + duration.value(366, 'd') &&
+        request.resource.data.details is string &&
+        request.resource.data.details.size() > 0 && request.resource.data.details.size() <= 1000 &&
+        request.resource.data.status in ['requested', 'confirmed', 'completed', 'cancelled'] &&
+        request.resource.data.staffNote is string && request.resource.data.staffNote.size() <= 500 &&
+        request.resource.data.staffUid is string && request.resource.data.staffUid.size() <= 128 &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp &&
+        (request.resource.data.staffUpdatedAt == null || request.resource.data.staffUpdatedAt is timestamp);
+    }
+
+    // The learner's identity and original request cannot be silently changed by either learner or staff updates.
+    function supportBookingCoreUnchanged() {
+      return request.resource.data.ownerUid == resource.data.ownerUid &&
+        request.resource.data.learnerName == resource.data.learnerName &&
+        request.resource.data.topic == resource.data.topic &&
+        request.resource.data.preferredAt == resource.data.preferredAt &&
+        request.resource.data.details == resource.data.details &&
+        request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    // Learners only withdraw active requests; they cannot overwrite a staff update or reopen a closed request.
+    function isValidOwnerBookingCancellation() {
+      return isAuthenticated() && request.auth.uid == resource.data.ownerUid &&
+        isValidSupportBooking() && supportBookingCoreUnchanged() &&
+        request.resource.data.staffNote == resource.data.staffNote &&
+        request.resource.data.staffUid == resource.data.staffUid &&
+        request.resource.data.staffUpdatedAt == resource.data.staffUpdatedAt &&
+        request.resource.data.updatedAt == request.time &&
+        resource.data.status in ['requested', 'confirmed'] &&
+        request.resource.data.status == 'cancelled';
+    }
+
+    // Staff can make only the approved state transitions and their response UID must be their trusted Auth UID.
+    function isValidStaffBookingUpdate() {
+      return isSupportStaff() && isValidSupportBooking() && supportBookingCoreUnchanged() &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.staffUpdatedAt == request.time &&
+        request.resource.data.staffUid == request.auth.uid &&
+        (
+          (resource.data.status == 'requested' && request.resource.data.status in ['confirmed', 'cancelled']) ||
+          (resource.data.status == 'confirmed' && request.resource.data.status in ['completed', 'cancelled'])
+        );
+    }
+
     match /users/{userId}/documents/{documentId} {
-      // A learner can list and open only their own document-link records.
+      // A learner can list and open only their own uploaded-file metadata records.
       allow read: if isOwner(userId);
 
-      // A new record must be owned by the learner and match the strict schema.
-      allow create: if isOwner(userId) && isValidDocument();
+      // A new record must be owned by the learner, match the strict schema, and point to its own Storage path.
+      allow create: if isOwner(userId) && isValidDocument(documentId);
 
       // This first version does not support record edits, preventing metadata tampering.
       allow update: if false;
 
-      // A learner can remove only their own link record.
+      // A learner can remove only their own file metadata record.
       allow delete: if isOwner(userId);
     }
 
@@ -216,8 +303,8 @@ service cloud.firestore {
     }
 
     match /learnerProgress/{userId} {
-      // The user explicitly requested this limited progress view for every signed-in learner.
-      allow read: if isAuthenticated();
+      // Only trusted staff claims may read every learner's shared progress summary.
+      allow read: if isProgressStaff();
 
       // Only the owner can create or refresh their own public summary, and every write validates the whole schema.
       allow create: if isOwner(userId) && isValidLearnerProgress();
@@ -225,6 +312,27 @@ service cloud.firestore {
 
       // The application has no delete action for the shared summary.
       allow delete: if false;
+    }
+
+    match /supportBookings/{bookingId} {
+      // Learners must query with ownerUid == their UID; support staff can view the shared queue.
+      allow read: if (isAuthenticated() && resource.data.ownerUid == request.auth.uid) || isSupportStaff();
+
+      // A booking always starts as a learner-owned request. Staff fields remain blank until a staff member responds.
+      allow create: if isAuthenticated() && isValidSupportBooking() &&
+        request.resource.data.ownerUid == request.auth.uid &&
+        request.resource.data.status == 'requested' &&
+        request.resource.data.staffNote == '' &&
+        request.resource.data.staffUid == '' &&
+        request.resource.data.staffUpdatedAt == null &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time;
+
+      // A learner can cancel their own booking; Teacher/Admin claims can move it through the staff workflow.
+      allow update: if isValidOwnerBookingCancellation() || isValidStaffBookingUpdate();
+
+      // A learner may permanently remove only their own booking. Staff retain status controls but cannot delete records.
+      allow delete: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
     }
   }
 }

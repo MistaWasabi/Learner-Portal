@@ -36,12 +36,12 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 
 - [ ] Completed, usable Learner Support Portal matching the approved brief.
 - [x] Firebase Authentication with registration, sign-in, sign-out, and session-gated content.
-- [ ] Firebase Realtime Database with structured records and secure rules.
-- [ ] REST CRUD for one main entity (recommended: learner tasks), with request evidence and final read-back.
+- [x] Firebase Realtime Database with structured, owner-based task records and published security rules.
+- [x] REST CRUD for learner tasks (`POST`, `GET`, `PATCH`, `DELETE`), with an in-app safe request log and final verification GET after each mutation. Complete the screenshot fields in `REST_CRUD_EVIDENCE.md` during the live demonstration.
+- [x] Support Booking with validated learner requests, private learner tracking, and Teacher/Admin staff status updates.
 - [ ] ES6 classes, object instances, and an inheritance or composition relationship.
 - [ ] Validation for names, email, passwords, numeric fields, and required data.
 - [ ] Error handling with `try`, `catch`, `finally`, and at least one deliberately thrown custom error.
-- [ ] Debugging/refactoring evidence showing an issue before and after correction.
 - [ ] Dynamic interface creation, updates, and removals.
 - [ ] Timer animation and controlled multimedia.
 - [ ] Approved playable mini-game with a Firebase-stored score or outcome.
@@ -53,9 +53,9 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - Add clear comments around meaningful code blocks, functions, state, rules, and styles. Comments should explain both **what** the code does and **why** that approach is appropriate, especially for Firebase, security, and data decisions.
 - Use Firebase Authentication for user registration and sign-in.
 - Store a registered learner's username in their Firebase Auth `displayName` and show it in the sidebar.
-- Keep authentication memory-only so refreshing returns the user to Login.
-- Clear the password field after an authentication attempt. Do not use cookies, local storage, or source code for passwords or sensitive session data.
-- When a cookie preference is later added for the assessment, limit it to a harmless setting such as theme. It must never change the memory-only authentication rule.
+- Use Firebase's browser-session persistence so a learner stays signed in after refreshing a page, but is signed out when the browser session ends. Firebase manages the session credential required for this; the app must not write credentials or profile data to browser storage itself.
+- Clear the password field after an authentication attempt. Do not use cookies, local storage, session storage, or source code for passwords. Firebase Authentication owns password handling and its managed session credential.
+- When a cookie preference is later added for the assessment, limit it to a harmless setting such as theme. It must never store a password or replace Firebase's managed session rule.
 
 ## Week 1 Demo Feedback and Agreed Technical Direction
 
@@ -80,9 +80,9 @@ This section records the Week 1 feedback so it guides future changes rather than
 
 ### File uploads and Firebase Storage
 
-- Replace the current external document-link approach with Firebase Storage only after the project owner has approved the billing upgrade. Cloud Storage for Firebase currently requires the Blaze plan, although no-cost usage allowances may still apply.
-- When Storage is approved, create owner-only Storage Rules before any upload interface. Store document metadata such as title, owner UID, upload time, and Storage path in Firestore; store file bytes only in the Storage bucket.
-- Keep the current document-link library available until the Storage migration is complete, so the portal continues to work without a paid Storage bucket.
+- Firebase Storage is approved through the Blaze plan. New uploads use an owner-only Storage path and strict type/size rules.
+- Document bytes are stored at `documents/{uid}/{documentId}` in Firebase Storage. Firestore stores only title, Storage path, MIME type, size, and upload time at `users/{uid}/documents/{documentId}`.
+- The library never stores a password, email, or download URL. It requests a Firebase download URL only after the owner asks to download the file, then does not persist that URL in app state or browser storage.
 
 ### Recommended implementation order from this feedback
 
@@ -91,6 +91,17 @@ This section records the Week 1 feedback so it guides future changes rather than
 3. Add the trusted Cloud Function/custom-claim workflow, then use role-aware rules and UI.
 4. Add verified-email handling and plan/test MFA with safe test accounts.
 5. Enable Firebase Storage only after the billing decision, then build secure file upload and deletion.
+
+## Week 2 Feedback and Current Technical Position
+
+- **Automatic role assignment:** Implemented in `functions/index.js` as `assignDefaultStudentRole`. It runs in the cloud when Firebase Authentication creates an account, uses the new account's unique UID, and assigns the safe default `student` Custom Claim through the Firebase Admin SDK.
+- **Privileged role-change call:** Implemented as the Admin-only `assignRole` callable Cloud Function. It checks the caller's Admin claim, finds the target by email, writes the Custom Claim against the target UID, and returns the UID and assigned role.
+- **Role visibility:** The Admin Database page receives UID, email, and role directly from the protected `listPortalUsers` Cloud Function. Roles are intentionally not copied to a client-writable database user table because Custom Claims are the permission source of truth.
+- **Cloud execution:** All trusted Cloud Functions are centralised in `functions/index.js`. React calls only the protected callable functions it needs; it never imports the Admin SDK or changes roles locally.
+- **Component refactor:** `src/App.jsx` is now import-only. `src/main.jsx` starts React and imports the master styles. Route composition and lazy loading live in `src/routes/PortalRouter.jsx`; focused feature folders own their visual JSX, CSS, logic, and hooks.
+- **Lazy loading:** Every route-level screen uses React `lazy()`, so it is downloaded only when the user navigates to it.
+- **Master styles:** `src/MasterStyles.css` holds global reset, tokens, form defaults, and shared visual primitives. Each feature owns its own screen styling; the former compatibility stylesheet has been removed.
+- **Documentation:** `ARCHITECTURE.md` is the codebase map for future work and assessment explanation.
 
 ## Future Firebase Knowledge and Architecture
 
@@ -101,25 +112,43 @@ This section records the Week 1 feedback so it guides future changes rather than
 
 ## Current Firestore Document Library
 
-- The Home page includes a private Document Library.
-- Firestore saves the link record at `users/{uid}/documents/{documentId}`; each learner reads only their own subcollection.
-- A record contains a title, an external HTTPS document link, and a creation date. Firebase does not store the document file itself.
-- `firestore.rules` is a prototype owner-only rule set that must be reviewed and published in the Firebase Console before document links will work.
+- `/documents` includes a private Document Library, with a condensed count on Home.
+- A learner uploads PDF, Word, OpenDocument, RTF, or plain-text files up to 10 MiB. The file bytes are stored in Firebase Storage; Firestore saves only private metadata at `users/{uid}/documents/{documentId}`.
+- Users can download or permanently delete only their own files. Deleting a document removes the Storage file and the matching Firestore metadata.
+- `firestore.rules`, `storage.rules`, and `DOCUMENT_STORAGE_RULES_REVIEW.md` document the prototype owner-only protections. Firestore and Storage Rules are both published; they should still be tested with separate learner accounts before broad sharing.
 
-## Current Firestore Task Manager
+## Current Realtime Database Task Manager
 
-- The Home page includes a private Task Manager at `users/{uid}/tasks/{taskId}`.
-- Learners can add, read, edit, complete, filter, and delete only their own tasks.
-- The Firestore version demonstrates non-relational, user-owned CRUD. The separate assessment requirement for Realtime Database REST CRUD remains outstanding.
+- Tasks are stored at `/tasks/{uid}/{taskId}` in Realtime Database, rather than in Firestore.
+- The Task Manager uses authenticated Firebase REST requests for `POST`, `GET`, `PATCH`, and `DELETE`; every write is followed by a final `GET` verification.
+- Learners can add, read, edit, complete, filter, and delete only their own tasks. An Admin can read all task paths through the protected Admin Database screen, but cannot modify another learner's record.
+- The Home-page task totals read from the same Realtime Database REST path so the dashboard and Task Manager agree.
+- The original Firestore task rule remains owner-only, but the interface no longer uses that old task collection. Do not delete legacy Firestore records until you have reviewed whether they are needed.
+
+## Current Administrator Directory
+
+- `/admin` is an Admin-only route protected in React and again in Firebase.
+- `listPortalUsers` is a callable Cloud Function that uses the Firebase Admin SDK to retrieve every Firebase Authentication user in pages.
+- It returns only the required directory fields: UID, username, email address, Custom Claim role, and disabled/active state. This data is never copied into Firestore or Realtime Database.
+- The Realtime Database rules grant an Admin read-only access to all task paths. The Cloud Function separately verifies the Admin claim before returning email addresses.
+
+## Current Support Booking
+
+- `/support` is available to every authenticated user through the persistent sidebar and is also summarised on the Home page.
+- A learner creates a validated support request with topic, preferred date/time, and support details. The booking is stored in Firestore at `supportBookings/{bookingId}`.
+- A booking stores the learner's immutable Firebase UID, a short display name, its preferred timestamp, status, timestamps, and an optional staff note. It deliberately stores no learner email address.
+- Learners can list only their own bookings, may cancel a request while it is `requested` or `confirmed`, and may permanently delete only their own request after confirmation.
+- Teacher and Admin Custom Claims can see the latest 100 requests in a staff queue and update a request only through these transitions: `requested → confirmed/cancelled` and `confirmed → completed/cancelled`.
+- Firestore Rules enforce ownership, allowed fields, string-size limits, immutable original booking details, trusted staff claims, and the permitted status workflow. `SUPPORT_BOOKING_RULES_REVIEW.md` records the model and security review.
 
 ## Suggested Build Order
 
-1. Create the Realtime Database structure and identity-based security rules.
-2. Build the task entity and complete its Firebase REST CRUD workflow.
-3. Replace temporary dashboard values with calculated task data.
-4. Add search/filter/sort, task-delete confirmation, and printable progress summary.
-5. Add the support-booking flow, then the preference, animation/multimedia, and game.
-6. Capture testing, REST, GitHub collaboration, debugging, and refactoring evidence as development proceeds.
+1. Capture the live REST CRUD screenshots and downloaded safe logs using `REST_CRUD_EVIDENCE.md`.
+2. Add a printable progress summary and a safe non-sensitive preference cookie.
+3. Test Support Booking with Student, Teacher, and Admin accounts after the published Firestore Rules update.
+4. Add verified-email handling and plan/test Firebase multi-factor authentication with a disposable development inbox.
+5. Add the assessment-approved animation/multimedia feature and playable JavaScript mini-game with a recorded outcome.
+6. Capture GitHub collaboration, debugging/refactoring, testing, and reflection evidence as development proceeds.
 
 ## Assessment Reminder
 

@@ -1,37 +1,16 @@
-import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { getActivePortalScreenLabel, getSidebarUserDetails, getVisiblePortalNavigation } from './portal.logic'
+import { usePortalSignOut } from './usePortalSignOut'
 import './PortalLayout.css'
 
-// One navigation definition keeps sidebar links and the displayed heading consistent.
-const portalNavigation = [
-  { path: '/home', label: 'Home' },
-  { path: '/learning', label: 'Learning' },
-  { path: '/progress', label: 'Learner progress' },
-  { path: '/tasks', label: 'Task manager' },
-  { path: '/documents', label: 'Document library' },
-]
-
-/**
- * Shared shell for every authenticated route.
- * Outlet is the React Router placeholder that swaps only the current screen while the sidebar remains mounted.
- */
-export function PortalLayout({ user, onSignOut }) {
+/** Shared authenticated shell that renders a persistent sidebar around the route Outlet. */
+export function PortalLayout({ user, role, onSignOut }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [signOutError, setSignOutError] = useState('')
-  const activeScreenLabel = portalNavigation.find((item) => item.path === location.pathname)?.label ?? 'Learner Portal'
-  const userName = user.displayName?.trim() || 'Learner'
-
-  /** Signs out first, then replaces browser history so Back cannot reveal a protected route. */
-  async function handleSignOut() {
-    setSignOutError('')
-    try {
-      await onSignOut()
-      navigate('/login', { replace: true })
-    } catch {
-      setSignOutError('Unable to sign out. Please try again.')
-    }
-  }
+  const { signOutError, handleSignOut } = usePortalSignOut(onSignOut, navigate)
+  const { userName, roleLabel } = getSidebarUserDetails(user, role)
+  const activeScreenLabel = getActivePortalScreenLabel(location.pathname)
+  const visibleNavigation = getVisiblePortalNavigation(role)
 
   return (
     <main className="home-page">
@@ -41,13 +20,11 @@ export function PortalLayout({ user, onSignOut }) {
             <div className="brand-mark sidebar-brand" aria-hidden="true">LP</div>
             <p className="sidebar-label">Signed in as</p>
             <strong className="sidebar-name">{userName}</strong>
+            {/* The sidebar displays only the trusted claim role, never the sign-in email address. */}
+            <p className="sidebar-role">{roleLabel}</p>
             <nav className="sidebar-navigation" aria-label="Portal navigation">
-              {portalNavigation.map((item) => (
-                <NavLink
-                  className={({ isActive }) => `sidebar-nav-button ${isActive ? 'sidebar-nav-active' : ''}`}
-                  key={item.path}
-                  to={item.path}
-                >
+              {visibleNavigation.map((item) => (
+                <NavLink className={({ isActive }) => `sidebar-nav-button ${isActive ? 'sidebar-nav-active' : ''}`} key={item.path} to={item.path}>
                   {item.label}
                 </NavLink>
               ))}
@@ -55,9 +32,7 @@ export function PortalLayout({ user, onSignOut }) {
           </div>
           <div>
             {signOutError && <p className="error" role="alert">{signOutError}</p>}
-            <button className="sign-out-button" type="button" onClick={handleSignOut}>
-              Sign out
-            </button>
+            <button className="sign-out-button" type="button" onClick={handleSignOut}>Sign out</button>
           </div>
         </aside>
 

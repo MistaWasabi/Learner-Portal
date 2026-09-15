@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // A file path is private when its UID segment matches the signed-in Firebase Auth user.
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // The type allow-list complements the browser validation; Rules are the enforcement boundary.
+    function isAllowedDocumentType() {
+      return request.resource.contentType in [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.oasis.opendocument.text',
+        'application/rtf',
+        'text/plain'
+      ];
+    }
+
+    match /documents/{userId}/{documentId} {
+      // Uploaded documents can be read only by the account that owns their UID path.
+      allow read: if isOwner(userId);
+
+      // The 20-character constraint matches the Firestore auto-ID generated before upload.
+      allow create: if isOwner(userId) &&
+        documentId.matches('^[A-Za-z0-9]{20}$') &&
+        request.resource.size > 0 && request.resource.size <= 10485760 &&
+        isAllowedDocumentType();
+
+      // Replacements use delete then a new upload, preserving immutable metadata and avoiding hidden overwrites.
+      allow update: if false;
+
+      // File removal is restricted to the owner of the exact Storage path.
+      allow delete: if isOwner(userId);
+    }
+  }
+}

@@ -1,0 +1,7 @@
+/* Route-specific fallback shown while a lazy-loaded screen or Firebase session is loading. */
+.route-loading {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  color: var(--text-muted);
+}

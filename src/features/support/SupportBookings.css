@@ -1,0 +1,278 @@
+/* Support Booking has a feature-specific prefix so its layout cannot alter other portal forms. */
+.support-bookings {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.support-booking-heading h2,
+.support-booking-heading p {
+  margin-top: 0;
+}
+
+.support-booking-heading p {
+  margin-bottom: var(--space-4);
+  color: var(--text-muted);
+}
+
+.support-booking-form {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.85fr) minmax(140px, 0.75fr) minmax(130px, 0.7fr);
+  gap: var(--space-3);
+}
+
+.support-booking-field,
+.support-booking-staff-controls {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.support-booking-field label,
+.support-booking-staff-controls label {
+  color: var(--text-heading);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.support-booking-field select,
+.support-booking-field input,
+.support-booking-field textarea,
+.support-booking-staff-controls select,
+.support-booking-staff-controls textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 9px;
+  outline: none;
+  color: var(--text-heading);
+  background: var(--input-bg);
+}
+
+.support-booking-field textarea,
+.support-booking-staff-controls textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.support-booking-field select:focus,
+.support-booking-field input:focus,
+.support-booking-field textarea:focus,
+.support-booking-staff-controls select:focus,
+.support-booking-staff-controls textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.support-booking-details-field,
+.support-booking-submit-button {
+  grid-column: 1 / -1;
+}
+
+.support-booking-submit-button,
+.support-booking-staff-save-button {
+  min-height: 46px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.support-booking-submit-button:hover,
+.support-booking-staff-save-button:hover {
+  background: var(--accent-hover);
+}
+
+.support-booking-submit-button:disabled,
+.support-booking-staff-save-button:disabled,
+.support-booking-cancel-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.support-booking-error,
+.support-booking-success {
+  margin: var(--space-3) 0 0;
+  font-size: 14px;
+}
+
+.support-booking-error {
+  color: var(--error);
+}
+
+.support-booking-success {
+  color: var(--success);
+}
+
+.support-booking-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.support-booking-item {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.support-booking-item h3,
+.support-booking-item p {
+  margin: 0;
+}
+
+.support-booking-item h3 {
+  color: var(--text-heading);
+  font-size: 15px;
+}
+
+.support-booking-item p {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 14px;
+  white-space: pre-wrap;
+}
+
+.support-booking-item-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.support-booking-time {
+  font-size: 13px !important;
+}
+
+.support-booking-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.support-booking-status-requested {
+  color: #8a5d00;
+  background: #fff2bf;
+}
+
+.support-booking-status-confirmed {
+  color: #1e5a9d;
+  background: #deeeff;
+}
+
+.support-booking-status-completed {
+  color: #0b7442;
+  background: #daf6e7;
+}
+
+.support-booking-status-cancelled {
+  color: #a52a3e;
+  background: #fbe3e8;
+}
+
+.support-booking-staff-note {
+  padding: var(--space-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 7px 7px 0;
+  background: var(--accent-soft);
+}
+
+.support-booking-cancel-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--error) 35%, var(--border));
+  border-radius: 8px;
+  color: var(--error);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Owner actions stay grouped so cancellation and irreversible deletion cannot be confused with staff controls. */
+.support-booking-owner-actions {
+  display: grid;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+}
+
+.support-booking-delete-button {
+  min-height: 38px;
+  padding: 0 var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--error) 35%, var(--border));
+  border-radius: 8px;
+  color: var(--error);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.support-booking-cancel-button:hover {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+}
+
+.support-booking-delete-button:hover {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+}
+
+.support-booking-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.support-booking-staff-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.65fr);
+}
+
+.support-booking-staff-controls {
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--border);
+}
+
+.support-booking-terminal,
+.support-booking-empty {
+  color: var(--text-muted);
+}
+
+.support-booking-terminal {
+  margin: 0 !important;
+  font-size: 13px !important;
+  white-space: normal !important;
+}
+
+@media (max-width: 700px) {
+  .support-booking-form,
+  .support-booking-staff-item {
+    grid-template-columns: 1fr;
+  }
+
+  .support-booking-staff-controls {
+    padding: var(--space-3) 0 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .support-booking-item {
+    flex-direction: column;
+  }
+
+  .support-booking-cancel-button,
+  .support-booking-delete-button {
+    width: 100%;
+  }
+}

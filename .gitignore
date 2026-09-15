@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Firebase Admin credentials must never be committed or supplied to the browser.
+serviceAccountKey.json
+firebase-service-account*.json
+functions/.env
+functions/node_modules/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
