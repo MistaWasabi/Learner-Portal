@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom'
+import { canViewLearnerProgress } from '../auth/auth.logic'
 import { useHomeOverview } from './useHomeOverview'
 import './HomeOverview.css'
 
 /** Renders calculated Home totals and route shortcuts; data subscriptions live in useHomeOverview. */
-export function HomeOverview({ user }) {
+export function HomeOverview({ user, role }) {
   const navigate = useNavigate()
   const { overview, overviewError } = useHomeOverview(user)
+  const canViewProgress = canViewLearnerProgress(role)
 
   return (
     <div className="home-overview">
@@ -29,12 +31,15 @@ export function HomeOverview({ user }) {
           <p>Choose a course and explore its lessons at your own pace.</p>
           <button className="overview-button" type="button" onClick={() => navigate('/learning')}>Open learning</button>
         </article>
-        <article className="overview-card">
-          <p className="overview-label">Learner progress</p>
-          <strong>{overview.completedLessonCount} lesson{overview.completedLessonCount === 1 ? '' : 's'} complete</strong>
-          <p>View course completion totals for every learner in the portal.</p>
-          <button className="overview-button" type="button" onClick={() => navigate('/progress')}>Open learner progress</button>
-        </article>
+        {/* Keep Home shortcuts aligned with the role-filtered sidebar; route and Firestore Rules provide the real enforcement. */}
+        {canViewProgress && (
+          <article className="overview-card">
+            <p className="overview-label">Learner progress</p>
+            <strong>{overview.completedLessonCount} lesson{overview.completedLessonCount === 1 ? '' : 's'} complete</strong>
+            <p>View course completion totals for every learner in the portal.</p>
+            <button className="overview-button" type="button" onClick={() => navigate('/progress')}>Open learner progress</button>
+          </article>
+        )}
         <article className="overview-card">
           <p className="overview-label">Task manager</p>
           <strong>{overview.completionRate}% complete</strong>

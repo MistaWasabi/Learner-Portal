@@ -52,7 +52,7 @@ export function PortalRouter() {
           {/* All authenticated screens inherit the persistent sidebar from this shared route layout. */}
           <Route element={<ProtectedPortal isAuthLoading={isAuthLoading} session={session} />}>
             <Route element={<PortalLayout user={session?.user} role={session?.role} onSignOut={handleSignOut} />}>
-              <Route path="/home" element={<HomeOverview user={session?.user} />} />
+              <Route path="/home" element={<HomeOverview user={session?.user} role={session?.role} />} />
               <Route path="/learning" element={<LearningContent user={session?.user} />} />
               <Route element={<ProtectedLearnerProgress role={session?.role} />}>
                 <Route path="/progress" element={<LearnerProgress />} />
