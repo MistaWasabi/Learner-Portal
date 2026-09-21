@@ -15,7 +15,8 @@ function requireAdmin(context) {
     throw new functions.https.HttpsError('unauthenticated', 'Sign in before using administrator tools.')
   }
 
-  if (context.auth.token.role !== 'admin') {
+  // An unverified inbox must not be able to use privileged callable operations, even if it has an Admin claim.
+  if (context.auth.token.email_verified !== true || context.auth.token.role !== 'admin') {
     throw new functions.https.HttpsError('permission-denied', 'Only an admin can use administrator tools.')
   }
 }

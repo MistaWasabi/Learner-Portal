@@ -16,6 +16,7 @@ export function Login({ onAuthenticated }) {
     showPassword,
     errors,
     authError,
+    authNotice,
     isSigningIn,
     changeField,
     validateField,
@@ -69,6 +70,7 @@ export function Login({ onAuthenticated }) {
           {isSigningIn ? 'Signing in...' : 'Sign in'}
         </button>
         {authError && <p className="login-error" role="alert">{authError}</p>}
+        {authNotice && <p className="success login-status" role="status">{authNotice}</p>}
         <p className="login-route-prompt">
           New to the portal? <Link className="login-route-link" to="/register">Create an account</Link>
         </p>

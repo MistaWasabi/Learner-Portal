@@ -17,6 +17,7 @@ export function Registration({ onAuthenticated }) {
     showPassword,
     errors,
     authError,
+    authNotice,
     isSigningIn,
     changeField,
     validateField,
@@ -88,6 +89,7 @@ export function Registration({ onAuthenticated }) {
           {isSigningIn ? 'Creating account...' : 'Create account'}
         </button>
         {authError && <p className="registration-error" role="alert">{authError}</p>}
+        {authNotice && <p className="success registration-status" role="status">{authNotice}</p>}
         <p className="registration-route-prompt">
           Already have an account? <Link className="registration-route-link" to="/login">Sign in</Link>
         </p>

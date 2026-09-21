@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   authenticatePortalUser,
   getAuthenticationError,
+  isEmailVerificationRequired,
   validateAuthForm,
   validateEmail,
   validatePassword,
@@ -19,6 +20,7 @@ export function useAuthForm({ authMode, onAuthenticated, navigate }) {
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [authError, setAuthError] = useState('')
+  const [authNotice, setAuthNotice] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
 
   /** Refreshes one field's feedback without mutating the existing error object. */
@@ -37,6 +39,7 @@ export function useAuthForm({ authMode, onAuthenticated, navigate }) {
     const setters = { username: setUsername, email: setEmail, password: setPassword }
     setters[fieldName](value)
     setAuthError('')
+    setAuthNotice('')
 
     if (errors[fieldName]) validateField(fieldName, value)
   }
@@ -48,6 +51,7 @@ export function useAuthForm({ authMode, onAuthenticated, navigate }) {
 
     setErrors(nextErrors)
     setAuthError('')
+    setAuthNotice('')
     if (nextErrors.username || nextErrors.email || nextErrors.password) return
 
     try {
@@ -60,7 +64,15 @@ export function useAuthForm({ authMode, onAuthenticated, navigate }) {
       await onAuthenticated(user)
       navigate('/home', { replace: true })
     } catch (error) {
-      setAuthError(getAuthenticationError(error, authMode))
+      // An unverified account is a real account with an instruction, not a wrong-password error.
+      if (isEmailVerificationRequired(error)) {
+        // The credential attempt is complete, so keep no email or username value in this rendered form.
+        setUsername('')
+        setEmail('')
+        setAuthNotice(getAuthenticationError(error, authMode))
+      } else {
+        setAuthError(getAuthenticationError(error, authMode))
+      }
     } finally {
       // Clearing the field is the only password lifecycle this application owns.
       setPassword('')
@@ -75,6 +87,7 @@ export function useAuthForm({ authMode, onAuthenticated, navigate }) {
     showPassword,
     errors,
     authError,
+    authNotice,
     isSigningIn,
     changeField,
     validateField,

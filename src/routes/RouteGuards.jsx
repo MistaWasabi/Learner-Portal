@@ -1,14 +1,15 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { canViewLearnerProgress, isAdmin } from '../features/auth/auth.logic'
 
-/** Blocks every authenticated portal route until Firebase has restored a user for this browser session. */
+/** Blocks portal routes until Firebase has restored an account whose sign-in email is verified. */
 export function ProtectedPortal({ isAuthLoading, session }) {
   // Waiting prevents a momentary Login redirect while Firebase restores its session credential after refresh.
   if (isAuthLoading) {
     return <main className="route-loading" aria-live="polite">Restoring your session...</main>
   }
 
-  return session ? <Outlet /> : <Navigate to="/login" replace />
+  // UI checks improve navigation, while Firebase Rules independently reject data requests from unverified ID tokens.
+  return session?.user.emailVerified ? <Outlet /> : <Navigate to="/login" replace />
 }
 
 /** Stops students accessing learner-progress data simply by typing the protected URL. */

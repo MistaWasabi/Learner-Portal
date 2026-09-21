@@ -19,7 +19,7 @@ Firebase Setup
 
 
 What the App has Currently
-- Login and Registration through Firebase Authentication
+- Login and Registration through Firebase Authentication, with a signed email-verification link sent after registration
 - Home Screen with a persistent side bar
 - Task Manager using Realtime Database REST CRUD (`POST`, `GET`, `PATCH`, and `DELETE`)
 - Document Library using private Firebase Storage uploads and Firestore metadata
@@ -43,6 +43,7 @@ Important
 - Login survives refreshes during the current browser session, then ends when the browser session ends
 - Passwords are never stored in Firestore, cookies, local storage, session storage, or source code
 - Firebase manages the session-only authentication credential needed to restore a login; the app does not write credentials or profile data to browser storage
+- Unverified accounts are signed out and cannot access protected portal routes or Firebase data. Firebase sends and validates the signed link; the app does not generate or store an email OTP.
 - Learner Progress can be seen only by users with a Firebase Custom Claim of `admin` or `teacher`
 - The Admin Database page and user directory can be seen only by an `admin` Custom Claim
 - Task records are stored at `/tasks/{uid}/{taskId}` in Realtime Database. Learners can manage their own records; an Admin can read every task but cannot edit another learner's task.

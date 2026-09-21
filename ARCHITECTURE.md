@@ -27,7 +27,7 @@ Each feature follows the same separation pattern:
 | Screen | Main component | Data and behaviour |
 | --- | --- | --- |
 | Login | `src/features/auth/Login.jsx` | `authForm.logic.js` and `useAuthForm.js` validate and submit Firebase Authentication requests. |
-| Registration | `src/features/auth/Registration.jsx` | Uses the same authentication logic, then Firebase creates the account. |
+| Registration | `src/features/auth/Registration.jsx` | Uses the same authentication logic, then Firebase creates the account, sends Firebase's signed verification link, and signs the unverified account out. |
 | Home | `src/features/home/HomeOverview.jsx` | `home.logic.js` and `useHomeOverview.js` assemble current summaries. |
 | Learning | `src/features/learning/LearningContent.jsx` | Firestore course selection and lesson-completion records. |
 | Learner Progress | `src/features/progress/LearnerProgress.jsx` | Teacher/Admin-only progress view. |
@@ -45,6 +45,33 @@ Each feature follows the same separation pattern:
 | Cloud Firestore | Course selections, lesson progress, learner summaries, support bookings, and document metadata | `firestore.rules`, relevant feature folders |
 | Cloud Storage | Private document file bytes at `documents/{uid}/{documentId}` | `src/features/documents/`, `storage.rules` |
 | Cloud Functions | Trusted role assignment and Admin-only user directory work | `functions/index.js` |
+
+## Email Verification Gate
+
+Every email/password account must prove ownership of its sign-in inbox before it can use the portal. Firebase owns the signed, expiring email link; the project does not create, store, or validate an OTP.
+
+```text
+Registration or unverified sign-in
+    ↓
+Firebase Authentication checks the email/password credential
+    ↓
+React requests Firebase's verification link
+    ↓
+The application signs the unverified session out
+    ↓
+Learner opens the signed link in their email inbox
+    ↓
+Next sign-in reloads Firebase's user record
+    ↓
+emailVerified: true → portal access and Firebase data access are allowed
+```
+
+| Enforcement layer | File(s) | Why it matters |
+| --- | --- | --- |
+| Authentication journey | `src/features/auth/authForm.logic.js` | Sends the verification link, reloads the user record before a sign-in is accepted, and signs out an unverified user. |
+| Portal navigation | `src/features/auth/usePortalSession.js`, `src/routes/RouteGuards.jsx` | Never creates a React portal session or route access for an unverified account. |
+| Firebase data | `firestore.rules`, `storage.rules`, `database.rules.json` | Rejects direct Firestore, Storage, and Realtime Database requests unless the Firebase token contains `email_verified: true`. |
+| Admin server actions | `functions/index.js` | Requires a verified email as well as the Admin Custom Claim before a callable Function can expose directory data or change a role. |
 
 ## Role Assignment Flow
 
@@ -69,8 +96,8 @@ React adapts the interface; Firebase Rules enforce the actual permission
 | Function | Trigger | Result |
 | --- | --- | --- |
 | `assignDefaultStudentRole` | Firebase Auth account creation | Automatically assigns the least-privileged `student` Custom Claim using the new account's UID. This background trigger does not return a response to React. |
-| `assignRole` | Admin-only callable request | Changes another account's role by its selected Firebase UID after checking the caller is an Admin; returns the target UID and role. |
-| `listPortalUsers` | Admin-only callable request | Returns a restricted Firebase Auth user directory: UID, username, email, role, and active/disabled state. |
+| `assignRole` | Admin-only callable request | Changes another account's role by its selected Firebase UID after checking the caller is a verified Admin; returns the target UID and role. |
+| `listPortalUsers` | Admin-only callable request | Returns a restricted Firebase Auth user directory only to a verified Admin: UID, username, email, role, and active/disabled state. |
 
 The browser must never assign its own role. `functions/index.js` runs in Firebase's trusted Cloud Functions environment, and it uses the Firebase Admin SDK there. This is why role changes are safe from browser tampering.
 
@@ -99,6 +126,7 @@ If an assessor specifically requires a database user-profile record, add it only
 | Add or remove a sidebar item | `src/features/portal/portal.logic.js` |
 | Add a new URL/screen | `src/routes/PortalRouter.jsx` |
 | Change sign-in or registration validation | `src/features/auth/authForm.logic.js` |
+| Change the email-verification gate | `src/features/auth/authForm.logic.js`, `src/routes/RouteGuards.jsx`, `firestore.rules`, `storage.rules`, and `database.rules.json` together |
 | Change access by role | `functions/index.js`, `firestore.rules`, `database.rules.json`, and `src/routes/RouteGuards.jsx` |
 | Change document type/size limits | `src/features/documents/documentLibrary.logic.js`, `firestore.rules`, and `storage.rules` together |
 | Change task fields or REST logic | `src/features/tasks/taskManager.logic.js` and `database.rules.json` together |
@@ -107,6 +135,7 @@ If an assessor specifically requires a database user-profile record, add it only
 ## Safety Rules to Remember
 
 - Passwords are handled only by Firebase Authentication. Do not put them in source code, cookies, local storage, session storage, Firestore, Realtime Database, or Cloud Storage.
+- Email verification uses Firebase's signed, expiring email link. Until Firebase reports `emailVerified: true`, route guards and Firebase Rules deny portal access and data requests. An email OTP is not generated, cached, or checked by this project.
 - The Firebase Auth UID identifies the account. Use it for ownership paths and trusted Admin SDK operations.
 - React can hide or show a button based on a role, but Firebase Rules and Cloud Functions are the real security boundary.
 - After a Custom Claim changes, the affected person must sign out and sign in again so their refreshed Firebase ID token includes the new role.

@@ -35,7 +35,7 @@ export function PortalRouter() {
             path="/login"
             element={isAuthLoading
               ? <main className="route-loading" aria-live="polite">Restoring your session...</main>
-              : session
+              : session?.user.emailVerified
                 ? <Navigate to="/home" replace />
                 : <Login onAuthenticated={handleAuthenticated} />}
           />
@@ -44,7 +44,7 @@ export function PortalRouter() {
             path="/register"
             element={isAuthLoading
               ? <main className="route-loading" aria-live="polite">Restoring your session...</main>
-              : session
+              : session?.user.emailVerified
                 ? <Navigate to="/home" replace />
                 : <Registration onAuthenticated={handleAuthenticated} />}
           />

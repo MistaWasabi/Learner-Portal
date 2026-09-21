@@ -46,7 +46,8 @@ export function usePortalSession() {
 
     /** Restores session state whenever Firebase reports a sign-in, sign-out, or browser refresh. */
     async function restoreSession(user) {
-      if (!user) {
+      if (!user || !user.emailVerified) {
+        // A stale unverified Firebase session is never treated as a portal session; Rules provide the same data boundary.
         if (isComponentMounted) {
           setSession(null)
           setIsAuthLoading(false)
