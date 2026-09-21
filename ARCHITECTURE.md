@@ -12,6 +12,7 @@ This guide is the quick map for finding code in the Learner Portal. It describes
 | Protected-route decisions | `src/routes/RouteGuards.jsx` | Keeps login and role checks outside screen components. |
 | Master Styles | `src/MasterStyles.css` | Holds font, colour, spacing, and browser-wide defaults only. |
 | Shared portal layout | `src/features/portal/PortalLayout.jsx` | Renders the persistent sidebar and the changing page area. |
+| Appearance preference | `src/features/preferences/` | Keeps the Light/Dark cookie, browser-side state, and reusable controls outside routes and feature screens. |
 
 `App.jsx` stays intentionally small. The router must contain React Router elements because routing is visual React work; Firebase calls and data calculations remain inside feature logic files and hooks.
 
@@ -35,6 +36,7 @@ Each feature follows the same separation pattern:
 | Support Bookings | `src/features/support/SupportBookings.jsx` | Firestore learner requests and Teacher/Admin status updates. |
 | Document Library | `src/features/documents/DocumentLibrary.jsx` | Firebase Storage files and Firestore file metadata. |
 | Admin Database | `src/features/admin/AdminDatabase.jsx` | Admin-only Firebase Auth directory and read-only task view. |
+| Theme preference | `src/features/preferences/ThemePreference.jsx` | Light/Dark controls, with cookie work in `theme.logic.js` and React state in `useThemePreference.js`. |
 
 ## Firebase Services
 
@@ -116,6 +118,7 @@ If an assessor specifically requires a database user-profile record, add it only
 ## Styling
 
 - `src/MasterStyles.css` is the master stylesheet: reset, font, colour variables, fluid spacing variables, form defaults, and shared visual primitives.
+- Light and Dark palettes are token sets in `src/MasterStyles.css`; changing `data-theme` on the root HTML element updates feature screens without duplicating their CSS.
 - Each feature owns its visual styles, for example `src/features/documents/DocumentLibrary.css`.
 - `src/styles/portal.css` has been removed. Portal shell, Home, Learning, Learner Progress, Task Manager, and route-loading CSS now live next to their owning component.
 
@@ -131,10 +134,12 @@ If an assessor specifically requires a database user-profile record, add it only
 | Change document type/size limits | `src/features/documents/documentLibrary.logic.js`, `firestore.rules`, and `storage.rules` together |
 | Change task fields or REST logic | `src/features/tasks/taskManager.logic.js` and `database.rules.json` together |
 | Change Support Booking status workflow | `src/features/support/supportBookings.logic.js` and `firestore.rules` together |
+| Change the Light/Dark preference | `src/features/preferences/theme.logic.js` and `src/MasterStyles.css` |
 
 ## Safety Rules to Remember
 
 - Passwords are handled only by Firebase Authentication. Do not put them in source code, cookies, local storage, session storage, Firestore, Realtime Database, or Cloud Storage.
+- `learnerPortalTheme` is the sole cookie set by this project. It holds only `light` or `dark`, uses `SameSite=Lax`, and can be removed with **Use device setting**. It is deliberately not used for Firebase sessions, roles, email addresses, UIDs, or passwords.
 - Email verification uses Firebase's signed, expiring email link. Until Firebase reports `emailVerified: true`, route guards and Firebase Rules deny portal access and data requests. An email OTP is not generated, cached, or checked by this project.
 - The Firebase Auth UID identifies the account. Use it for ownership paths and trusted Admin SDK operations.
 - React can hide or show a button based on a role, but Firebase Rules and Cloud Functions are the real security boundary.

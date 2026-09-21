@@ -18,7 +18,7 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - Task manager: create, read, edit, mark complete, and delete tasks. Deletion needs confirmation.
 - Support booking: a validated booking form with useful success/error feedback.
 - Search/filter/sort: use arrays, higher-order functions, and reusable functions to work with tasks or resources.
-- Preference: save, read, change, and remove one **non-sensitive** cookie preference (for example, theme or display mode).
+- Preference: **implemented** — save, read, change, and remove the non-sensitive `learnerPortalTheme` cookie (`light` or `dark`). The control can return to the device setting by deleting the cookie; it never stores account or authentication data.
 - Print and redirect: provide a printable progress summary and use redirects only where they are justified by the user flow.
 - Engagement: one JavaScript-timer animation, controlled image/audio/video, and an assessor-approved playable JavaScript mini-game that records its result.
 
@@ -55,7 +55,7 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - Store a registered learner's username in their Firebase Auth `displayName` and show it in the sidebar.
 - Use Firebase's browser-session persistence so a learner stays signed in after refreshing a page, but is signed out when the browser session ends. Firebase manages the session credential required for this; the app must not write credentials or profile data to browser storage itself.
 - Clear the password field after an authentication attempt. Do not use cookies, local storage, session storage, or source code for passwords. Firebase Authentication owns password handling and its managed session credential.
-- When a cookie preference is later added for the assessment, limit it to a harmless setting such as theme. It must never store a password or replace Firebase's managed session rule.
+- The application cookie is limited to the harmless `learnerPortalTheme` visual setting (`light` or `dark`). **Use device setting** deletes it. It never stores a password, email, UID, role, token, or Firebase session data and does not replace Firebase's managed session rule.
 
 ## Week 1 Demo Feedback and Agreed Technical Direction
 
@@ -100,7 +100,7 @@ This section records the Week 1 feedback so it guides future changes rather than
 - **Cloud execution:** All trusted Cloud Functions are centralised in `functions/index.js`. React calls only the protected callable functions it needs; it never imports the Admin SDK or changes roles locally.
 - **Component refactor:** `src/App.jsx` is now import-only. `src/main.jsx` starts React and imports the master styles. Route composition and lazy loading live in `src/routes/PortalRouter.jsx`; focused feature folders own their visual JSX, CSS, logic, and hooks.
 - **Lazy loading:** Every route-level screen uses React `lazy()`, so it is downloaded only when the user navigates to it.
-- **Master styles:** `src/MasterStyles.css` holds global reset, tokens, form defaults, and shared visual primitives. Each feature owns its own screen styling; the former compatibility stylesheet has been removed.
+- **Master styles:** `src/MasterStyles.css` holds global reset, Light/Dark colour tokens, form defaults, and shared visual primitives. Each feature owns its own screen styling; the former compatibility stylesheet has been removed.
 - **Documentation:** `ARCHITECTURE.md` is the codebase map for future work and assessment explanation.
 
 ## Future Firebase Knowledge and Architecture
@@ -144,7 +144,7 @@ This section records the Week 1 feedback so it guides future changes rather than
 ## Suggested Build Order
 
 1. Capture the live REST CRUD screenshots and downloaded safe logs using `REST_CRUD_EVIDENCE.md`.
-2. Add a printable progress summary and a safe non-sensitive preference cookie.
+2. Add a printable progress summary.
 3. Test Support Booking with Student, Teacher, and Admin accounts after the published Firestore Rules update.
 4. Plan/test Firebase multi-factor authentication with a disposable development inbox after verifying the completed email-verification flow.
 5. Add the assessment-approved animation/multimedia feature and playable JavaScript mini-game with a recorded outcome.

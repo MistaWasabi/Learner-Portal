@@ -27,6 +27,7 @@ What the App has Currently
 - Learner Progress Screen
 - Admin Database page showing all Firebase Authentication users, UIDs, roles, email addresses, read-only task records, and trusted Admin role management
 - Support Booking for learner requests and Teacher/Admin status management
+- Light/Dark appearance preference that can follow the device setting
 
 
 Code Structure
@@ -43,6 +44,7 @@ Important
 - Login survives refreshes during the current browser session, then ends when the browser session ends
 - Passwords are never stored in Firestore, cookies, local storage, session storage, or source code
 - Firebase manages the session-only authentication credential needed to restore a login; the app does not write credentials or profile data to browser storage
+- The only cookie set by this project is the optional `learnerPortalTheme` visual preference (`light` or `dark`). It contains no password, email, UID, role, or authentication token; **Use device setting** deletes it.
 - Unverified accounts are signed out and cannot access protected portal routes or Firebase data. Firebase sends and validates the signed link; the app does not generate or store an email OTP.
 - Learner Progress can be seen only by users with a Firebase Custom Claim of `admin` or `teacher`
 - The Admin Database page and user directory can be seen only by an `admin` Custom Claim

@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { getActivePortalScreenLabel, getSidebarUserDetails, getVisiblePortalNavigation } from './portal.logic'
 import { usePortalSignOut } from './usePortalSignOut'
+import { ThemePreference } from '../preferences/ThemePreference'
 import './PortalLayout.css'
 
 /** Shared authenticated shell that renders a persistent sidebar around the route Outlet. */
@@ -32,6 +33,8 @@ export function PortalLayout({ user, role, onSignOut }) {
             </nav>
           </div>
           <div>
+            {/* The sidebar exposes a reusable, non-sensitive visual preference for every signed-in role. */}
+            <ThemePreference compact />
             {signOutError && <p className="error" role="alert">{signOutError}</p>}
             <button className="sign-out-button" type="button" onClick={handleSignOut}>Sign out</button>
           </div>

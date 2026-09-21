@@ -50,6 +50,11 @@
   color: var(--text-muted);
 }
 
+/* The shared preference control needs a consistent gap before either auth form begins. */
+.auth-card > .theme-preference {
+  margin-bottom: var(--space-5);
+}
+
 @media (max-width: 520px) {
   .auth-page {
     padding: 16px;
