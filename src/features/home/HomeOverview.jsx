@@ -48,8 +48,8 @@ export function HomeOverview({ user, role }) {
         </article>
         <article className="overview-card">
           <p className="overview-label">Document library</p>
-          <strong>{overview.documentCount} saved link{overview.documentCount === 1 ? '' : 's'}</strong>
-          <p>Keep your learning-document links organised and available to you.</p>
+          <strong>{overview.documentCount} saved document{overview.documentCount === 1 ? '' : 's'}</strong>
+          <p>Keep your uploaded learning documents organised and available to you.</p>
           <button className="overview-button" type="button" onClick={() => navigate('/documents')}>Open document library</button>
         </article>
         <article className="overview-card">

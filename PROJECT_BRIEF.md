@@ -39,10 +39,10 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - [x] Firebase Realtime Database with structured, owner-based task records and published security rules.
 - [x] REST CRUD for learner tasks (`POST`, `GET`, `PATCH`, `DELETE`), with an in-app safe request log and final verification GET after each mutation. Complete the screenshot fields in `REST_CRUD_EVIDENCE.md` during the live demonstration.
 - [x] Support Booking with validated learner requests, private learner tracking, and Teacher/Admin staff status updates.
-- [ ] ES6 classes, object instances, and an inheritance or composition relationship.
-- [ ] Validation for names, email, passwords, numeric fields, and required data.
-- [ ] Error handling with `try`, `catch`, `finally`, and at least one deliberately thrown custom error.
-- [ ] Dynamic interface creation, updates, and removals.
+- [x] ES6 class, object instance, and composition: `EmailVerificationRequiredError extends Error` is deliberately instantiated for the verification journey, while focused React components compose shared layouts, hooks, and controls.
+- [x] Validation for names, email, passwords, numeric fields, and required data across registration, authentication, tasks, bookings, and document uploads.
+- [x] Error handling with `try`, `catch`, `finally`, and deliberately thrown custom errors. Firebase and REST failures are converted into learner-readable feedback.
+- [x] Dynamic interface creation, updates, and removals through task CRUD, support bookings, document uploads/deletion, course selections, and lesson completion.
 - [ ] Timer animation and controlled multimedia.
 - [ ] Approved playable mini-game with a Firebase-stored score or outcome.
 - [ ] GitHub evidence of branches, commits, pull requests, reviews, and merges for each contributor.
