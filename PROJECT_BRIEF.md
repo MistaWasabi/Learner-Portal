@@ -19,7 +19,7 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - Support booking: a validated booking form with useful success/error feedback.
 - Search/filter/sort: use arrays, higher-order functions, and reusable functions to work with tasks or resources.
 - Preference: **implemented** — save, read, change, and remove the non-sensitive `learnerPortalTheme` cookie (`light` or `dark`). The control can return to the device setting by deleting the cookie; it never stores account or authentication data.
-- Print and redirect: provide a printable progress summary and use redirects only where they are justified by the user flow.
+- Print and redirect: **implemented** — Home creates a downloadable `.txt` progress summary from the signed-in learner's authorised totals; React Router uses redirects only for justified login, registration, and unknown-route flows.
 - Engagement: one JavaScript-timer animation, controlled image/audio/video, and an assessor-approved playable JavaScript mini-game that records its result.
 
 ## Firebase and Security Requirements
@@ -43,6 +43,7 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - [x] Validation for names, email, passwords, numeric fields, and required data across registration, authentication, tasks, bookings, and document uploads.
 - [x] Error handling with `try`, `catch`, `finally`, and deliberately thrown custom errors. Firebase and REST failures are converted into learner-readable feedback.
 - [x] Dynamic interface creation, updates, and removals through task CRUD, support bookings, document uploads/deletion, course selections, and lesson completion.
+- [x] Downloadable learner progress summary generated as a local `.txt` file from the current learner's authorised Home totals.
 - [ ] Timer animation and controlled multimedia.
 - [ ] Approved playable mini-game with a Firebase-stored score or outcome.
 - [ ] GitHub evidence of branches, commits, pull requests, reviews, and merges for each contributor.
@@ -144,11 +145,10 @@ This section records the Week 1 feedback so it guides future changes rather than
 ## Suggested Build Order
 
 1. Capture the live REST CRUD screenshots and downloaded safe logs using `REST_CRUD_EVIDENCE.md`.
-2. Add a printable progress summary.
-3. Test Support Booking with Student, Teacher, and Admin accounts after the published Firestore Rules update.
-4. Plan/test Firebase multi-factor authentication with a disposable development inbox after verifying the completed email-verification flow.
-5. Add the assessment-approved animation/multimedia feature and playable JavaScript mini-game with a recorded outcome.
-6. Capture GitHub collaboration, debugging/refactoring, testing, and reflection evidence as development proceeds.
+2. Test Support Booking with Student, Teacher, and Admin accounts after the published Firestore Rules update.
+3. Plan/test Firebase multi-factor authentication with a disposable development inbox after verifying the completed email-verification flow.
+4. Add the assessment-approved animation/multimedia feature and playable JavaScript mini-game with a recorded outcome.
+5. Capture GitHub collaboration, debugging/refactoring, testing, and reflection evidence as development proceeds.
 
 ## Assessment Reminder
 

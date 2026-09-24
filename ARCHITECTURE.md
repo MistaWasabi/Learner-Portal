@@ -29,9 +29,10 @@ Each feature follows the same separation pattern:
 | --- | --- | --- |
 | Login | `src/features/auth/Login.jsx` | `authForm.logic.js` and `useAuthForm.js` validate and submit Firebase Authentication requests. |
 | Registration | `src/features/auth/Registration.jsx` | Uses the same authentication logic, then Firebase creates the account, sends Firebase's signed verification link, and signs the unverified account out. |
-| Home | `src/features/home/HomeOverview.jsx` | `home.logic.js` and `useHomeOverview.js` assemble current summaries. |
+| Home | `src/features/home/HomeOverview.jsx` | `home.logic.js` and `useHomeOverview.js` assemble current summaries; `progress/ProgressSummary.jsx` exports those owner-scoped totals as a local `.txt` file. |
 | Learning | `src/features/learning/LearningContent.jsx` | Firestore course selection and lesson-completion records. |
 | Learner Progress | `src/features/progress/LearnerProgress.jsx` | Teacher/Admin-only progress view. |
+| Downloadable progress summary | `src/features/progress/ProgressSummary.jsx` | Available on Home to every verified learner; builds and downloads their own current totals without a new Firebase read or write. |
 | Task Manager | `src/features/tasks/TaskManager.jsx` | Realtime Database REST CRUD and evidence log. |
 | Support Bookings | `src/features/support/SupportBookings.jsx` | Firestore learner requests and Teacher/Admin status updates. |
 | Document Library | `src/features/documents/DocumentLibrary.jsx` | Firebase Storage files and Firestore file metadata. |
@@ -134,12 +135,14 @@ If an assessor specifically requires a database user-profile record, add it only
 | Change document type/size limits | `src/features/documents/documentLibrary.logic.js`, `firestore.rules`, and `storage.rules` together |
 | Change task fields or REST logic | `src/features/tasks/taskManager.logic.js` and `database.rules.json` together |
 | Change Support Booking status workflow | `src/features/support/supportBookings.logic.js` and `firestore.rules` together |
+| Change the `.txt` progress export | `src/features/progress/progressSummary.logic.js` |
 | Change the Light/Dark preference | `src/features/preferences/theme.logic.js` and `src/MasterStyles.css` |
 
 ## Safety Rules to Remember
 
 - Passwords are handled only by Firebase Authentication. Do not put them in source code, cookies, local storage, session storage, Firestore, Realtime Database, or Cloud Storage.
 - `learnerPortalTheme` is the sole cookie set by this project. It holds only `light` or `dark`, uses `SameSite=Lax`, and can be removed with **Use device setting**. It is deliberately not used for Firebase sessions, roles, email addresses, UIDs, or passwords.
+- The progress-summary download is generated in the browser only after the learner chooses it. It exports the learner's current owner-scoped totals and display name, never an email, UID, role, password, token, or database credential.
 - Email verification uses Firebase's signed, expiring email link. Until Firebase reports `emailVerified: true`, route guards and Firebase Rules deny portal access and data requests. An email OTP is not generated, cached, or checked by this project.
 - The Firebase Auth UID identifies the account. Use it for ownership paths and trusted Admin SDK operations.
 - React can hide or show a button based on a role, but Firebase Rules and Cloud Functions are the real security boundary.

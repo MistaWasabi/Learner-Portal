@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { canViewLearnerProgress } from '../auth/auth.logic'
+import { ProgressSummary } from '../progress/ProgressSummary'
 import { useHomeOverview } from './useHomeOverview'
 import './HomeOverview.css'
 
@@ -22,6 +23,9 @@ export function HomeOverview({ user, role }) {
           </article>
         ))}
       </section>
+
+      {/* The summary card reuses Home's owner-scoped totals instead of reading another learner's progress data. */}
+      <ProgressSummary user={user} overview={overview} />
 
       {/* These condensed cards use live feature totals, then send the learner to the focused screen for full controls. */}
       <section className="overview-quick-access" aria-label="Portal sections">

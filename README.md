@@ -25,6 +25,7 @@ What the App has Currently
 - Document Library using private Firebase Storage uploads and Firestore metadata
 - Learning Courses and Lesson Completion
 - Learner Progress Screen
+- Downloadable learner progress summary as a privacy-safe `.txt` file
 - Admin Database page showing all Firebase Authentication users, UIDs, roles, email addresses, read-only task records, and trusted Admin role management
 - Support Booking for learner requests and Teacher/Admin status management
 - Light/Dark appearance preference that can follow the device setting
@@ -45,6 +46,7 @@ Important
 - Passwords are never stored in Firestore, cookies, local storage, session storage, or source code
 - Firebase manages the session-only authentication credential needed to restore a login; the app does not write credentials or profile data to browser storage
 - The only cookie set by this project is the optional `learnerPortalTheme` visual preference (`light` or `dark`). It contains no password, email, UID, role, or authentication token; **Use device setting** deletes it.
+- The Home-page progress summary downloads only the current learner's authorised totals as `learner-progress-summary.txt`. It does not upload a report or include an email address, UID, role, password, or authentication token.
 - Unverified accounts are signed out and cannot access protected portal routes or Firebase data. Firebase sends and validates the signed link; the app does not generate or store an email OTP.
 - Learner Progress can be seen only by users with a Firebase Custom Claim of `admin` or `teacher`
 - The Admin Database page and user directory can be seen only by an `admin` Custom Claim
