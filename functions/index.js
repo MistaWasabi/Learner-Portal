@@ -15,7 +15,8 @@ function requireAdmin(context) {
     throw new functions.https.HttpsError('unauthenticated', 'Sign in before using administrator tools.')
   }
 
-  if (context.auth.token.role !== 'admin') {
+  // An unverified inbox must not be able to use privileged callable operations, even if it has an Admin claim.
+  if (context.auth.token.email_verified !== true || context.auth.token.role !== 'admin') {
     throw new functions.https.HttpsError('permission-denied', 'Only an admin can use administrator tools.')
   }
 }
@@ -37,21 +38,23 @@ exports.assignDefaultStudentRole = functions.auth.user().onCreate(async (user) =
 })
 
 /**
- * Allows only an existing admin to promote or change another account's role.
+ * Allows only an existing admin to promote or change another account's role by its unique Firebase Auth UID.
  * The browser can request this operation, but the server validates the caller's token before any claim changes.
  */
 exports.assignRole = functions.https.onCall(async (data, context) => {
   // Role changes are a privileged operation, so the caller's token is checked on the server.
   requireAdmin(context)
 
-  const email = typeof data?.email === 'string' ? data.email.trim().toLowerCase() : ''
+  // The UID is stable even when a person changes their email address, so it is the trusted identifier for this lookup.
+  const targetUid = typeof data?.uid === 'string' ? data.uid.trim() : ''
   const role = typeof data?.role === 'string' ? data.role : ''
 
-  if (!email || !email.includes('@') || !validRoles.has(role)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Provide a valid email address and role.')
+  if (!targetUid || targetUid.length > 128 || !validRoles.has(role)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Provide a valid user ID and role.')
   }
 
-  const targetUser = await getAuth().getUserByEmail(email)
+  // The Admin SDK runs in the Cloud Function and is the only code allowed to write Custom Claims.
+  const targetUser = await getAuth().getUser(targetUid)
   await getAuth().setCustomUserClaims(targetUser.uid, {
     ...(targetUser.customClaims || {}),
     role,

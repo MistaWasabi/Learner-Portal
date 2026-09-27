@@ -18,8 +18,8 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - Task manager: create, read, edit, mark complete, and delete tasks. Deletion needs confirmation.
 - Support booking: a validated booking form with useful success/error feedback.
 - Search/filter/sort: use arrays, higher-order functions, and reusable functions to work with tasks or resources.
-- Preference: save, read, change, and remove one **non-sensitive** cookie preference (for example, theme or display mode).
-- Print and redirect: provide a printable progress summary and use redirects only where they are justified by the user flow.
+- Preference: **implemented** — save, read, change, and remove the non-sensitive `learnerPortalTheme` cookie (`light` or `dark`). The control can return to the device setting by deleting the cookie; it never stores account or authentication data.
+- Print and redirect: **implemented** — Home creates a downloadable `.txt` progress summary from the signed-in learner's authorised totals; React Router uses redirects only for justified login, registration, and unknown-route flows.
 - Engagement: one JavaScript-timer animation, controlled image/audio/video, and an assessor-approved playable JavaScript mini-game that records its result.
 
 ## Firebase and Security Requirements
@@ -35,14 +35,15 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 ## Month 2 Delivery Checklist
 
 - [ ] Completed, usable Learner Support Portal matching the approved brief.
-- [x] Firebase Authentication with registration, sign-in, sign-out, and session-gated content.
+- [x] Firebase Authentication with registration, signed email verification, sign-in, sign-out, and session-gated content.
 - [x] Firebase Realtime Database with structured, owner-based task records and published security rules.
 - [x] REST CRUD for learner tasks (`POST`, `GET`, `PATCH`, `DELETE`), with an in-app safe request log and final verification GET after each mutation. Complete the screenshot fields in `REST_CRUD_EVIDENCE.md` during the live demonstration.
 - [x] Support Booking with validated learner requests, private learner tracking, and Teacher/Admin staff status updates.
-- [ ] ES6 classes, object instances, and an inheritance or composition relationship.
-- [ ] Validation for names, email, passwords, numeric fields, and required data.
-- [ ] Error handling with `try`, `catch`, `finally`, and at least one deliberately thrown custom error.
-- [ ] Dynamic interface creation, updates, and removals.
+- [x] ES6 class, object instance, and composition: `EmailVerificationRequiredError extends Error` is deliberately instantiated for the verification journey, while focused React components compose shared layouts, hooks, and controls.
+- [x] Validation for names, email, passwords, numeric fields, and required data across registration, authentication, tasks, bookings, and document uploads.
+- [x] Error handling with `try`, `catch`, `finally`, and deliberately thrown custom errors. Firebase and REST failures are converted into learner-readable feedback.
+- [x] Dynamic interface creation, updates, and removals through task CRUD, support bookings, document uploads/deletion, course selections, and lesson completion.
+- [x] Downloadable learner progress summary generated as a local `.txt` file from the current learner's authorised Home totals.
 - [ ] Timer animation and controlled multimedia.
 - [ ] Approved playable mini-game with a Firebase-stored score or outcome.
 - [ ] GitHub evidence of branches, commits, pull requests, reviews, and merges for each contributor.
@@ -55,7 +56,7 @@ Build a browser-based Learner Support Portal for SkillsTrack Training Centre. Le
 - Store a registered learner's username in their Firebase Auth `displayName` and show it in the sidebar.
 - Use Firebase's browser-session persistence so a learner stays signed in after refreshing a page, but is signed out when the browser session ends. Firebase manages the session credential required for this; the app must not write credentials or profile data to browser storage itself.
 - Clear the password field after an authentication attempt. Do not use cookies, local storage, session storage, or source code for passwords. Firebase Authentication owns password handling and its managed session credential.
-- When a cookie preference is later added for the assessment, limit it to a harmless setting such as theme. It must never store a password or replace Firebase's managed session rule.
+- The application cookie is limited to the harmless `learnerPortalTheme` visual setting (`light` or `dark`). **Use device setting** deletes it. It never stores a password, email, UID, role, token, or Firebase session data and does not replace Firebase's managed session rule.
 
 ## Week 1 Demo Feedback and Agreed Technical Direction
 
@@ -75,7 +76,7 @@ This section records the Week 1 feedback so it guides future changes rather than
 
 - Implement custom claims as an early security milestone. Use claims such as `role: 'learner'` and later `role: 'assessor'`; the React client may read claims to adapt the interface, but it must never create or change them.
 - Assign custom claims only with the Firebase Admin SDK in a trusted environment, preferably a Cloud Function. Firebase rules must enforce the role boundary; hiding a button in React is not security.
-- Add email verification before allowing a learner to enrol in multi-factor authentication. Use a disposable test inbox such as EmailOnDeck only for development testing, never as an administrator or production account.
+- Email verification is implemented: Registration requests Firebase's signed verification link, then signs the unverified account out. Unverified accounts cannot enter protected portal routes or read/write portal data until Firebase reports `emailVerified: true`; signing in while unverified sends/checks for a link then ends the session again. Use a disposable test inbox such as EmailOnDeck only for development testing, never as an administrator or production account. MFA remains the next security milestone.
 - Plan two-factor authentication as Firebase multi-factor authentication, not as a password stored or generated by this app. Firebase's web MFA options require Firebase Authentication with Identity Platform and support SMS or TOTP factors; the implementation needs a separate testing and privacy review.
 
 ### File uploads and Firebase Storage
@@ -95,12 +96,12 @@ This section records the Week 1 feedback so it guides future changes rather than
 ## Week 2 Feedback and Current Technical Position
 
 - **Automatic role assignment:** Implemented in `functions/index.js` as `assignDefaultStudentRole`. It runs in the cloud when Firebase Authentication creates an account, uses the new account's unique UID, and assigns the safe default `student` Custom Claim through the Firebase Admin SDK.
-- **Privileged role-change call:** Implemented as the Admin-only `assignRole` callable Cloud Function. It checks the caller's Admin claim, finds the target by email, writes the Custom Claim against the target UID, and returns the UID and assigned role.
-- **Role visibility:** The Admin Database page receives UID, email, and role directly from the protected `listPortalUsers` Cloud Function. Roles are intentionally not copied to a client-writable database user table because Custom Claims are the permission source of truth.
+- **Privileged role-change call:** Implemented as the Admin-only `assignRole` callable Cloud Function. It checks the caller's Admin claim, receives the selected target UID, writes the Custom Claim against that UID, and returns the UID and assigned role.
+- **Role visibility and management:** The Admin Database page receives UID, email, and role directly from the protected `listPortalUsers` Cloud Function. Its Role management form makes the trusted `assignRole` call and refreshes the directory after a confirmed response. Roles are intentionally not copied to a client-writable database user table because Custom Claims are the permission source of truth.
 - **Cloud execution:** All trusted Cloud Functions are centralised in `functions/index.js`. React calls only the protected callable functions it needs; it never imports the Admin SDK or changes roles locally.
 - **Component refactor:** `src/App.jsx` is now import-only. `src/main.jsx` starts React and imports the master styles. Route composition and lazy loading live in `src/routes/PortalRouter.jsx`; focused feature folders own their visual JSX, CSS, logic, and hooks.
 - **Lazy loading:** Every route-level screen uses React `lazy()`, so it is downloaded only when the user navigates to it.
-- **Master styles:** `src/MasterStyles.css` holds global reset, tokens, form defaults, and shared visual primitives. Each feature owns its own screen styling; the former compatibility stylesheet has been removed.
+- **Master styles:** `src/MasterStyles.css` holds global reset, Light/Dark colour tokens, form defaults, and shared visual primitives. Each feature owns its own screen styling; the former compatibility stylesheet has been removed.
 - **Documentation:** `ARCHITECTURE.md` is the codebase map for future work and assessment explanation.
 
 ## Future Firebase Knowledge and Architecture
@@ -144,11 +145,10 @@ This section records the Week 1 feedback so it guides future changes rather than
 ## Suggested Build Order
 
 1. Capture the live REST CRUD screenshots and downloaded safe logs using `REST_CRUD_EVIDENCE.md`.
-2. Add a printable progress summary and a safe non-sensitive preference cookie.
-3. Test Support Booking with Student, Teacher, and Admin accounts after the published Firestore Rules update.
-4. Add verified-email handling and plan/test Firebase multi-factor authentication with a disposable development inbox.
-5. Add the assessment-approved animation/multimedia feature and playable JavaScript mini-game with a recorded outcome.
-6. Capture GitHub collaboration, debugging/refactoring, testing, and reflection evidence as development proceeds.
+2. Test Support Booking with Student, Teacher, and Admin accounts after the published Firestore Rules update.
+3. Plan/test Firebase multi-factor authentication with a disposable development inbox after verifying the completed email-verification flow.
+4. Add the assessment-approved animation/multimedia feature and playable JavaScript mini-game with a recorded outcome.
+5. Capture GitHub collaboration, debugging/refactoring, testing, and reflection evidence as development proceeds.
 
 ## Assessment Reminder
 

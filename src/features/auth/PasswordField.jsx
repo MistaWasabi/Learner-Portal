@@ -21,6 +21,7 @@ export function PasswordField({
         id={id}
         name="password"
         className="auth-password-input"
+        // Changing the input type changes only what is visible on screen; the password value remains temporary React state.
         type={showPassword ? 'text' : 'password'}
         value={value}
         onChange={onChange}
@@ -31,6 +32,7 @@ export function PasswordField({
         aria-describedby={error ? errorId : undefined}
         placeholder="Enter your password"
       />
+      {/* A real button gives keyboard and screen-reader users the same visibility control as mouse users. */}
       <button
         className="auth-password-toggle"
         type="button"

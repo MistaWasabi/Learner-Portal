@@ -1,11 +1,14 @@
 import { useNavigate } from 'react-router-dom'
+import { canViewLearnerProgress } from '../auth/auth.logic'
+import { ProgressSummary } from '../progress/ProgressSummary'
 import { useHomeOverview } from './useHomeOverview'
 import './HomeOverview.css'
 
 /** Renders calculated Home totals and route shortcuts; data subscriptions live in useHomeOverview. */
-export function HomeOverview({ user }) {
+export function HomeOverview({ user, role }) {
   const navigate = useNavigate()
   const { overview, overviewError } = useHomeOverview(user)
+  const canViewProgress = canViewLearnerProgress(role)
 
   return (
     <div className="home-overview">
@@ -21,6 +24,10 @@ export function HomeOverview({ user }) {
         ))}
       </section>
 
+      {/* The summary card reuses Home's owner-scoped totals instead of reading another learner's progress data. */}
+      <ProgressSummary user={user} overview={overview} />
+
+      {/* These condensed cards use live feature totals, then send the learner to the focused screen for full controls. */}
       <section className="overview-quick-access" aria-label="Portal sections">
         <article className="overview-card">
           <p className="overview-label">Learning</p>
@@ -28,12 +35,15 @@ export function HomeOverview({ user }) {
           <p>Choose a course and explore its lessons at your own pace.</p>
           <button className="overview-button" type="button" onClick={() => navigate('/learning')}>Open learning</button>
         </article>
-        <article className="overview-card">
-          <p className="overview-label">Learner progress</p>
-          <strong>{overview.completedLessonCount} lesson{overview.completedLessonCount === 1 ? '' : 's'} complete</strong>
-          <p>View course completion totals for every learner in the portal.</p>
-          <button className="overview-button" type="button" onClick={() => navigate('/progress')}>Open learner progress</button>
-        </article>
+        {/* Keep Home shortcuts aligned with the role-filtered sidebar; route and Firestore Rules provide the real enforcement. */}
+        {canViewProgress && (
+          <article className="overview-card">
+            <p className="overview-label">Learner progress</p>
+            <strong>{overview.completedLessonCount} lesson{overview.completedLessonCount === 1 ? '' : 's'} complete</strong>
+            <p>View course completion totals for every learner in the portal.</p>
+            <button className="overview-button" type="button" onClick={() => navigate('/progress')}>Open learner progress</button>
+          </article>
+        )}
         <article className="overview-card">
           <p className="overview-label">Task manager</p>
           <strong>{overview.completionRate}% complete</strong>
@@ -42,8 +52,8 @@ export function HomeOverview({ user }) {
         </article>
         <article className="overview-card">
           <p className="overview-label">Document library</p>
-          <strong>{overview.documentCount} saved link{overview.documentCount === 1 ? '' : 's'}</strong>
-          <p>Keep your learning-document links organised and available to you.</p>
+          <strong>{overview.documentCount} saved document{overview.documentCount === 1 ? '' : 's'}</strong>
+          <p>Keep your uploaded learning documents organised and available to you.</p>
           <button className="overview-button" type="button" onClick={() => navigate('/documents')}>Open document library</button>
         </article>
         <article className="overview-card">

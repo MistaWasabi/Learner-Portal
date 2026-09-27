@@ -8,6 +8,7 @@ export function useLearnerProgress() {
   const [isLoading, setIsLoading] = useState(true)
   const [progressError, setProgressError] = useState('')
 
+  // Returning Firestore's unsubscribe function prevents this protected listener from surviving after its route is left.
   useEffect(() => subscribeToLearnerProgress({
     onSummaries: (summaries) => {
       setLearnerSummaries(summaries)

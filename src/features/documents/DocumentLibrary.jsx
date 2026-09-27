@@ -33,6 +33,7 @@ export function DocumentLibrary({ user }) {
         </div>
       </div>
 
+      {/* The hook checks type and size before it uploads; Firebase Storage Rules still provide the authoritative owner check. */}
       <form className="document-upload-form" onSubmit={handleDocumentSave} noValidate>
         <div className="document-upload-field">
           <label htmlFor="document-title">Document title</label>
@@ -40,6 +41,7 @@ export function DocumentLibrary({ user }) {
         </div>
         <div className="document-upload-field">
           <label htmlFor="document-file">Document file</label>
+          {/* Incrementing fileInputVersion after upload remounts this native input, reliably clearing its sensitive file selection. */}
           <input key={fileInputVersion} id="document-file" type="file" accept={acceptedDocumentInputTypes} onChange={handleDocumentFileChange} aria-describedby="document-upload-help" />
           <p id="document-upload-help" className="document-upload-help">PDF, Word, OpenDocument, RTF, or text · maximum 10 MB.</p>
           {documentFile && <p className="document-selected-file">Selected: {documentFile.name}</p>}
@@ -54,6 +56,7 @@ export function DocumentLibrary({ user }) {
       <div className="document-library-list" aria-live="polite">
         {isLoading && <p className="document-library-empty">Loading your documents...</p>}
         {!isLoading && !loadError && documents.length === 0 && <p className="document-library-empty">No documents yet. Upload your first learning document above.</p>}
+        {/* Metadata determines whether an item downloads from Storage or opens a pre-existing legacy link. */}
         {documents.map((document) => (
           <article className="document-library-item" key={document.id}>
             <div>

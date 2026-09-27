@@ -35,7 +35,7 @@ export function PortalRouter() {
             path="/login"
             element={isAuthLoading
               ? <main className="route-loading" aria-live="polite">Restoring your session...</main>
-              : session
+              : session?.user.emailVerified
                 ? <Navigate to="/home" replace />
                 : <Login onAuthenticated={handleAuthenticated} />}
           />
@@ -44,7 +44,7 @@ export function PortalRouter() {
             path="/register"
             element={isAuthLoading
               ? <main className="route-loading" aria-live="polite">Restoring your session...</main>
-              : session
+              : session?.user.emailVerified
                 ? <Navigate to="/home" replace />
                 : <Registration onAuthenticated={handleAuthenticated} />}
           />
@@ -52,7 +52,7 @@ export function PortalRouter() {
           {/* All authenticated screens inherit the persistent sidebar from this shared route layout. */}
           <Route element={<ProtectedPortal isAuthLoading={isAuthLoading} session={session} />}>
             <Route element={<PortalLayout user={session?.user} role={session?.role} onSignOut={handleSignOut} />}>
-              <Route path="/home" element={<HomeOverview user={session?.user} />} />
+              <Route path="/home" element={<HomeOverview user={session?.user} role={session?.role} />} />
               <Route path="/learning" element={<LearningContent user={session?.user} />} />
               <Route element={<ProtectedLearnerProgress role={session?.role} />}>
                 <Route path="/progress" element={<LearnerProgress />} />

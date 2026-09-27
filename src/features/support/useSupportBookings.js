@@ -27,6 +27,7 @@ export function useSupportBookings(user, role) {
   const [bookingError, setBookingError] = useState('')
   const [bookingSuccess, setBookingSuccess] = useState('')
   const [staffError, setStaffError] = useState('')
+  // UI visibility follows the same Custom Claim checked by Firestore Rules; it improves guidance but is not the security control.
   const isStaff = isSupportStaff(role)
 
   useEffect(() => {

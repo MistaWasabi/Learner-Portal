@@ -20,6 +20,7 @@ export function LearnerProgress() {
       <div className="learner-progress-list" aria-live="polite">
         {isLoading && <p className="empty-learning-content">Loading learner progress...</p>}
         {!isLoading && !progressError && learnerSummaries.length === 0 && <p className="empty-learning-content">No learner progress is available yet. Each learner appears after their next sign-in.</p>}
+        {/* The percentage is calculated from stored totals so staff see a consistent, non-sensitive progress summary. */}
         {learnerSummaries.map((summary) => {
           const progressPercent = summary.totalSelectedLessons
             ? Math.round((summary.completedLessonCount / summary.totalSelectedLessons) * 100)
@@ -32,6 +33,7 @@ export function LearnerProgress() {
                 <p>{summary.selectedCourseCount} selected course{summary.selectedCourseCount === 1 ? '' : 's'} · {summary.completedLessonCount} of {summary.totalSelectedLessons} lessons complete</p>
                 <p className="progress-last-updated">Updated {formatProgressTimestamp(summary.updatedAt)}</p>
               </div>
+              {/* The visible bar is paired with an aria-label so its percentage is available without relying on colour or width. */}
               <div className="progress-meter" aria-label={`${summary.displayName} has completed ${progressPercent}% of selected lessons`}>
                 <span style={{ width: `${progressPercent}%` }} />
               </div>
