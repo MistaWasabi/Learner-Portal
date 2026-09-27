@@ -1,6 +1,7 @@
 # Learner Portal Architecture Guide
 
 This guide is the quick map for finding code in the Learner Portal. It describes where code runs, why it lives there, and which file to change for each feature.
+-Aidan
 
 ## Start Here
 
