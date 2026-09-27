@@ -1,5 +1,8 @@
 import {
   createUserWithEmailAndPassword,
+  reload,
+  sendEmailVerification,
+  signOut,
   signInWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth'
@@ -7,6 +10,47 @@ import { auth, authPersistenceReady } from '../../firebase'
 import { ensureLearnerProgressSummary } from '../shared/portal.logic'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const emailVerificationRequiredCode = 'portal/email-verification-required'
+
+/** Represents a successful Firebase credential check that is deliberately refused until its email owner is confirmed. */
+class EmailVerificationRequiredError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = 'EmailVerificationRequiredError'
+    this.code = emailVerificationRequiredCode
+  }
+}
+
+/** Lets the visual form show an instructional status rather than treating an unverified account as invalid credentials. */
+export function isEmailVerificationRequired(error) {
+  return error.code === emailVerificationRequiredCode
+}
+
+/** Sends Firebase's signed link, clears the temporary Auth session, and prevents the unverified account entering the portal. */
+async function requireVerifiedEmail(user, accountWasCreated) {
+  let verificationLinkSent = false
+
+  try {
+    // Firebase owns the link's signature and expiry; the browser never generates or stores an email OTP.
+    await sendEmailVerification(user)
+    verificationLinkSent = true
+  } catch {
+    // A prior link may still be valid, or Firebase may temporarily rate-limit new messages.
+  }
+
+  try {
+    // Ending the managed session prevents the just-created or unverified account from reaching protected routes.
+    await signOut(auth)
+  } catch {
+    // Rules and route guards also require email verification, providing defence in depth if a local sign-out fails.
+  }
+
+  const accountMessage = accountWasCreated ? 'Your account was created.' : 'Your email address is not verified.'
+  const linkMessage = verificationLinkSent
+    ? ' Open the verification link in your sign-in inbox, then sign in again.'
+    : ' Check your sign-in inbox for an existing verification link, then sign in again.'
+  throw new EmailVerificationRequiredError(`${accountMessage}${linkMessage}`)
+}
 
 /** Validates the username required only during registration before Firebase receives the request. */
 export function validateUsername(value) {
@@ -40,6 +84,7 @@ export function validateAuthForm({ authMode, username, email, password }) {
 
 /** Converts Firebase Authentication failures into safe, learner-friendly feedback. */
 export function getAuthenticationError(error, authMode) {
+  if (isEmailVerificationRequired(error)) return error.message
   if (error.code === 'auth/email-already-in-use') return 'An account already exists with this email address.'
   if (error.code === 'auth/weak-password') return 'Password must contain at least 6 characters.'
   return authMode === 'register'
@@ -59,7 +104,12 @@ export async function authenticatePortalUser({ authMode, username, email, passwo
 
   if (authMode === 'register') {
     await updateProfile(userCredential.user, { displayName: username.trim() })
+    await requireVerifiedEmail(userCredential.user, true)
   }
+
+  // A fresh user reload avoids relying on an older cached emailVerified value after the learner opens the email link.
+  await reload(userCredential.user)
+  if (!userCredential.user.emailVerified) await requireVerifiedEmail(userCredential.user, false)
 
   try {
     // This non-sensitive summary lets authorised staff view course totals without copying email addresses.

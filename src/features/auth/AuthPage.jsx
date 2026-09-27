@@ -1,4 +1,5 @@
 import './AuthPage.css'
+import { ThemePreference } from '../preferences/ThemePreference'
 
 /**
  * Provides the shared visual frame for authentication routes.
@@ -13,6 +14,8 @@ export function AuthPage({ heading, intro, children }) {
         <p className="auth-eyebrow">Learner Portal</p>
         <h1 id="auth-page-heading" className="auth-heading">{heading}</h1>
         <p className="auth-intro">{intro}</p>
+        {/* Keeping the visual preference available before sign-in means the login screen follows the learner's choice too. */}
+        <ThemePreference />
         {children}
       </section>
     </main>

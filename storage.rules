@@ -4,7 +4,8 @@ service firebase.storage {
   match /b/{bucket}/o {
     // A file path is private when its UID segment matches the signed-in Firebase Auth user.
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      // File access requires both path ownership and Firebase-confirmed email ownership.
+      return request.auth != null && request.auth.token.email_verified == true && request.auth.uid == userId;
     }
 
     // The type allow-list complements the browser validation; Rules are the enforcement boundary.

@@ -16,6 +16,7 @@ export function Login({ onAuthenticated }) {
     showPassword,
     errors,
     authError,
+    authNotice,
     isSigningIn,
     changeField,
     validateField,
@@ -30,6 +31,7 @@ export function Login({ onAuthenticated }) {
     >
       {/* Autocomplete is disabled so Login does not request that the browser retain sensitive form values. */}
       <form className="login-form" autoComplete="off" noValidate onSubmit={handleSubmit}>
+        {/* The browser provides helpful email keyboard support, while useAuthForm supplies the deliberately basic validation message. */}
         <div className="login-field-group">
           <label className="login-label" htmlFor="login-email">Email address</label>
           <input
@@ -48,6 +50,7 @@ export function Login({ onAuthenticated }) {
           {errors.email && <p id="login-email-error" className="login-error">{errors.email}</p>}
         </div>
 
+        {/* PasswordField is shared with Registration so the masking and accessible show/hide behaviour stays consistent. */}
         <div className="login-field-group">
           <label className="login-label" htmlFor="login-password">Password</label>
           <PasswordField
@@ -62,10 +65,12 @@ export function Login({ onAuthenticated }) {
           {errors.password && <p id="login-password-error" className="login-error">{errors.password}</p>}
         </div>
 
+        {/* Disabling the button prevents duplicate Firebase sign-in requests while one request is in progress. */}
         <button className="login-submit-button" type="submit" disabled={isSigningIn}>
           {isSigningIn ? 'Signing in...' : 'Sign in'}
         </button>
         {authError && <p className="login-error" role="alert">{authError}</p>}
+        {authNotice && <p className="success login-status" role="status">{authNotice}</p>}
         <p className="login-route-prompt">
           New to the portal? <Link className="login-route-link" to="/register">Create an account</Link>
         </p>

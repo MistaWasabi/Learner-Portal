@@ -9,6 +9,7 @@
   -moz-osx-font-smoothing: grayscale;
   --text-heading: #172033;
   --text-muted: #667085;
+  --page-bg: #f5f7fb;
   --border: #e4e8f0;
   --card-bg: #fff;
   --input-bg: #fff;
@@ -33,6 +34,27 @@
   --radius-card: clamp(0.875rem, 1.6vw, 1.25rem);
 }
 
+/* Dark mode changes shared tokens rather than duplicating every feature stylesheet. */
+:root[data-theme='dark'] {
+  color: #e7ecf5;
+  background: #101522;
+  --text-heading: #f4f7fc;
+  --text-muted: #aeb8ca;
+  --page-bg: #101522;
+  --border: #303b4f;
+  --card-bg: #182132;
+  --input-bg: #111927;
+  --input-border: #465168;
+  --placeholder: #9ca8bc;
+  --accent: #8c85ff;
+  --accent-hover: #a19bff;
+  --accent-soft: rgb(140 133 255 / 20%);
+  --accent-soft-strong: rgb(140 133 255 / 34%);
+  --error: #ff8a9f;
+  --success: #5ed49a;
+  --card-shadow: 0 18px 50px rgb(0 0 0 / 28%);
+}
+
 /* Ensures padding and borders are included in every element's declared size. */
 * {
   box-sizing: border-box;
@@ -43,7 +65,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: #f5f7fb;
+  color: var(--text-heading);
+  background: var(--page-bg);
+  transition: color 180ms ease, background-color 180ms ease;
 }
 
 /* Lets every browser control inherit the portal typeface while feature CSS owns its individual appearance. */

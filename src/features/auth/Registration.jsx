@@ -17,6 +17,7 @@ export function Registration({ onAuthenticated }) {
     showPassword,
     errors,
     authError,
+    authNotice,
     isSigningIn,
     changeField,
     validateField,
@@ -31,6 +32,7 @@ export function Registration({ onAuthenticated }) {
     >
       {/* Autocomplete is disabled so Registration does not ask the browser to retain credential form values. */}
       <form className="registration-form" autoComplete="off" noValidate onSubmit={handleSubmit}>
+        {/* The username becomes the portal display name; Firebase Authentication still owns the email and password credentials. */}
         <div className="registration-field-group">
           <label className="registration-label" htmlFor="registration-username">Username</label>
           <input
@@ -49,6 +51,7 @@ export function Registration({ onAuthenticated }) {
           {errors.username && <p id="registration-username-error" className="registration-error">{errors.username}</p>}
         </div>
 
+        {/* Client-side email feedback is quick guidance only; Firebase performs the authoritative account validation. */}
         <div className="registration-field-group">
           <label className="registration-label" htmlFor="registration-email">Email address</label>
           <input
@@ -81,10 +84,12 @@ export function Registration({ onAuthenticated }) {
           {errors.password && <p id="registration-password-error" className="registration-error">{errors.password}</p>}
         </div>
 
+        {/* One active request avoids creating confusing duplicate registration attempts. */}
         <button className="registration-submit-button" type="submit" disabled={isSigningIn}>
           {isSigningIn ? 'Creating account...' : 'Create account'}
         </button>
         {authError && <p className="registration-error" role="alert">{authError}</p>}
+        {authNotice && <p className="success registration-status" role="status">{authNotice}</p>}
         <p className="registration-route-prompt">
           Already have an account? <Link className="registration-route-link" to="/login">Sign in</Link>
         </p>

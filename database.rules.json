@@ -3,12 +3,12 @@
     ".read": false,
     ".write": false,
     "tasks": {
-      ".read": "auth != null && auth.token.role === 'admin'",
+      ".read": "auth != null && auth.token.email_verified === true && auth.token.role === 'admin'",
       "$userId": {
-        ".read": "auth != null && auth.uid === $userId",
+        ".read": "auth != null && auth.token.email_verified === true && auth.uid === $userId",
         ".indexOn": ["createdAt"],
         "$taskId": {
-          ".write": "auth != null && auth.uid === $userId && ((!data.exists() && newData.exists() && newData.child('createdAt').val() === now && newData.child('updatedAt').val() === now) || (data.exists() && newData.exists() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('updatedAt').val() === now) || (data.exists() && !newData.exists()))",
+          ".write": "auth != null && auth.token.email_verified === true && auth.uid === $userId && ((!data.exists() && newData.exists() && newData.child('createdAt').val() === now && newData.child('updatedAt').val() === now) || (data.exists() && newData.exists() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('updatedAt').val() === now) || (data.exists() && !newData.exists()))",
           ".validate": "newData.hasChildren(['title', 'category', 'dueDate', 'priority', 'completed', 'createdAt', 'updatedAt'])",
           "title": {
             ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"

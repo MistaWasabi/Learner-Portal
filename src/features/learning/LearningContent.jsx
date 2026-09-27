@@ -35,6 +35,7 @@ export function LearningContent({ user }) {
         {learningError && <p className="error learning-status" role="alert">{learningError}</p>}
         {learningSuccess && <p className="success learning-status" role="status">{learningSuccess}</p>}
 
+        {/* Course selection is personal: the hook stores only this learner's selected course IDs in Firestore. */}
         <div className="course-grid" aria-live="polite">
           {courseCatalog.map((course) => {
             const isSelected = selectedCourseIds.includes(course.id)
@@ -90,6 +91,7 @@ export function LearningContent({ user }) {
                 {isSavingCourseId === activeCourse.id ? 'Removing...' : 'Remove course'}
               </button>
             </div>
+            {/* A lesson ID combines its course and lesson IDs, preventing two courses with similarly named lessons from colliding. */}
             <ol className="lesson-list">
               {activeCourse.lessons.map((lesson, index) => {
                 const lessonProgressId = createLessonProgressId(activeCourse.id, lesson.id)

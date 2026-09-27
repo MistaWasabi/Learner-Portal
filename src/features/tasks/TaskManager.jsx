@@ -45,6 +45,7 @@ export function TaskManager({ user }) {
         </label>
       </div>
 
+      {/* The hook validates this data and performs POST or PATCH requests; JSX only describes the accessible form. */}
       <form className="task-form" onSubmit={handleTaskSubmit} noValidate>
         <div className="task-field task-title-field">
           <label htmlFor="task-title">Task title</label>
@@ -80,6 +81,7 @@ export function TaskManager({ user }) {
         {!isLoading && !taskError && visibleTasks.length === 0 && <p className="empty-task-list">No {taskFilter === 'all' ? '' : taskFilter} tasks to show.</p>}
         {visibleTasks.map((task) => (
           <article className={`task-item ${task.completed ? 'task-completed' : ''}`} key={task.id}>
+            {/* Toggling completion makes a small PATCH request instead of rewriting the learner's entire task list. */}
             <label className="task-complete-control">
               <input type="checkbox" checked={Boolean(task.completed)} onChange={() => handleTaskCompletion(task)} aria-label={`Mark ${task.title} as ${task.completed ? 'not completed' : 'completed'}`} />
               <span aria-hidden="true" />
@@ -99,6 +101,7 @@ export function TaskManager({ user }) {
         ))}
       </div>
 
+      {/* Assessment evidence intentionally records metadata only, so tokens and task content never enter the downloadable log. */}
       <section className="task-rest-evidence" aria-labelledby="rest-evidence-heading">
         <div className="task-rest-evidence-heading">
           <div>

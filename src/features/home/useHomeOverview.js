@@ -10,6 +10,7 @@ export function useHomeOverview(user) {
   const [supportBookingCount, setSupportBookingCount] = useState(0)
   const [overviewError, setOverviewError] = useState('')
 
+  // One subscription source feeds the condensed dashboard, avoiding duplicate data-fetching logic in every Home card.
   useEffect(() => subscribeToHomeOverview(user, {
     onTasks: setTasks,
     onDocumentCount: setDocumentCount,

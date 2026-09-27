@@ -263,7 +263,7 @@
   border: 1px solid var(--accent);
   border-radius: 8px;
   color: var(--accent);
-  background: white;
+  background: var(--card-bg);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
