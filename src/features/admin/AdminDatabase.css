@@ -1,7 +1,14 @@
 /* Admin-only tables use a dedicated prefix so future admin screens cannot change learner-facing styles. */
 .admin-database {
   display: grid;
+  min-width: 0;
   gap: var(--space-5);
+}
+
+/* Cards must be allowed to shrink inside the shared portal column; wide tables scroll within their own wrapper instead. */
+.admin-directory,
+.admin-task-records {
+  min-width: 0;
 }
 
 .admin-section-heading {
@@ -45,7 +52,8 @@
 /* This form requests a role change but never writes a Custom Claim locally; Cloud Functions remain the permission boundary. */
 .admin-role-form {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(130px, 0.45fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.45fr) auto;
+  min-width: 0;
   align-items: end;
   gap: var(--space-3);
   margin-top: var(--space-4);
@@ -72,6 +80,7 @@
 
 .admin-role-field {
   display: grid;
+  min-width: 0;
   gap: var(--space-1);
   color: var(--text-heading);
   font-size: 13px;
@@ -129,6 +138,9 @@
 }
 
 .admin-table-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin-top: var(--space-4);
   overflow-x: auto;
 }
@@ -138,6 +150,15 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+}
+
+/* Directory columns carry UIDs and emails, so a controlled horizontal scroll is clearer than forcing the card wider. */
+.admin-user-table {
+  min-width: 760px;
+}
+
+.admin-task-table {
+  min-width: 560px;
 }
 
 .admin-user-table th,
@@ -177,7 +198,7 @@
   color: #526277;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   .admin-section-heading {
     align-items: stretch;
     flex-direction: column;
